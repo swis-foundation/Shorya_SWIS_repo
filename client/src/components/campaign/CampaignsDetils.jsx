@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
 const CampaignsDetails = () => {
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState([]);
@@ -10,7 +12,7 @@ const CampaignsDetails = () => {
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/campaigns"); // Your backend URL
+        const response = await fetch(`${backendUrl}/api/campaigns`); // Use dynamic URL
         const data = await response.json();
         if (data.success) {
           setCampaigns(data.campaigns);
@@ -105,7 +107,7 @@ const CampaignsDetails = () => {
           >
             <div className="relative">
               <img
-                src={`http://localhost:3000/uploads/${c.image}`} // Updated to use your backend image URL
+                src={`${backendUrl}/uploads/${c.image}`} // Updated to use dynamic backend URL
                 alt={c.title}
                 className="w-full h-48 object-cover"
               />

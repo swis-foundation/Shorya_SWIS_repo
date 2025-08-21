@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import RealTimeProgressBar from "./RealTimeProgressBar";
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
 const SectionCard = ({ title, children }) => (
   <div className="bg-white p-6 md:p-8 rounded-xl shadow-xl">
     <h3 className="text-xl md:text-2xl font-semibold text-lime-600 mb-4">
@@ -43,7 +45,7 @@ const CampaignPage = () => {
   useEffect(() => {
     const fetchCampaign = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/campaigns/${id}`);
+        const response = await fetch(`${backendUrl}/api/campaigns/${id}`);
         const data = await response.json();
         if (data.success) {
           setCampaign(data.campaign);
@@ -94,7 +96,7 @@ const CampaignPage = () => {
           {/* Image */}
           <div className="rounded-2xl overflow-hidden shadow-xl">
             <img
-              src={`http://localhost:3000/uploads/${campaign.image}`}
+              src={`${backendUrl}/uploads/${campaign.image}`}
               alt="Campaign"
               className="w-full h-[300px] md:h-[400px] object-cover"
             />
@@ -164,7 +166,11 @@ const CampaignPage = () => {
             </h3>
 
             {/* NEW: Real-time progress bar component */}
-            <RealTimeProgressBar campaignId={campaign.id} />
+            <RealTimeProgressBar
+              campaignId={campaign.id}
+              initialRaised={campaign.raised_amount}
+              initialGoal={campaign.target_amount}
+            />
 
             <p className="text-lg text-gray-600">
               <span className="font-bold">{campaign.supporters}</span> Donors
@@ -197,7 +203,7 @@ const DonorsList = ({ campaignId }) => {
   useEffect(() => {
     const fetchDonations = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/campaigns/${campaignId}/donations`);
+        const response = await fetch(`${backendUrl}/api/campaigns/${campaignId}/donations`);
         const data = await response.json();
         if (data.success) {
           setDonations(data.donations);

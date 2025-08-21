@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
 const Campaigns = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -8,7 +10,7 @@ const Campaigns = () => {
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/campaigns");
+        const response = await fetch(`${backendUrl}/api/campaigns`);
         const data = await response.json();
         if (data.success) {
           setCampaigns(data.campaigns);
@@ -58,7 +60,7 @@ const Campaigns = () => {
             >
               <div className="relative">
                 <img
-                  src={`http://localhost:3000/uploads/${campaign.image}`}
+                  src={`${backendUrl}/uploads/${campaign.image}`}
                   alt={campaign.title}
                   className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                 />

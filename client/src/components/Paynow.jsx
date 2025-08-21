@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
 const Paynow = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,7 +27,7 @@ const Paynow = () => {
       try {
         // 1. Call backend to create a Razorpay order
         const orderResponse = await fetch(
-          "http://localhost:3000/api/payments/create-order",
+          `${backendUrl}/api/payments/create-order`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -54,7 +56,7 @@ const Paynow = () => {
           handler: async function (response) {
             // 2. On successful payment, verify it with the backend
             const verifyResponse = await fetch(
-              "http://localhost:3000/api/payments/verify-payment",
+              `${backendUrl}/api/payments/verify-payment`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
