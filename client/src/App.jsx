@@ -8,6 +8,8 @@ import CampaignsDetils from "./components/campaign/CampaignsDetils";
 import CampaignPage from "./components/campaign/CampaignPage";
 import Startcampaign from "./components/campaign/Startcampaign";
 import Paynow from "./components/Paynow";
+import AboutUs from "./components/AboutUs"; // Import the new component
+import HowItWorks from "./components/HowItWorks"; // Import the new component
 
 const App = () => {
   return (
@@ -16,13 +18,13 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/aboutUs" element={<AboutUs />} /> {/* Add the new route */}
+        <Route path="/how-it-works" element={<HowItWorks />} /> {/* Add the new route */}
         <Route path="/campaigns" element={<CampaignsDetils />} />
-        {/* Dynamic route for all campaign pages */}
         <Route path="/campaigns/:id" element={<CampaignPage />} />
         <Route path="/start-campaign" element={<Startcampaign />} />
-        {/* Dynamic route for the payment page */}
         <Route path="/campaigns/:id/donate" element={<Paynow />} />
-        <Route path="*" element={<div>404, Sudipta</div>} />
+        <Route path="*" element={<div>404, Page Not Found</div>} />
       </Routes>
     </Router>
   );
