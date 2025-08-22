@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FaUser, FaBuilding } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 const StartCampaign = () => {
   const [accountType, setAccountType] = useState("individual");
@@ -127,19 +128,13 @@ const StartCampaign = () => {
           >
             Create Campaign Account
           </button>
-          <a
-            href="/Paynow"
-            className="w-full max-w-xs mx-auto block py-2 bg-pink-600 hover:bg-red-700 text-white font-medium text-center rounded-md mt-2"
-          >
-            Paynow
-          </a>
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-4">
           Already have an account?{" "}
-          <a href="/Login" className="text-[#64a600] hover:underline">
+          <Link to="/Login" className="text-[#64a600] hover:underline">
             Log in
-          </a>
+          </Link>
         </p>
       </div>
     </div>
