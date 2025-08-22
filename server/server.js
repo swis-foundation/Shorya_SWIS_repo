@@ -1,6 +1,10 @@
 require('dotenv').config();
 
 // --- PRE-STARTUP CHECKS ---
+if (!process.env.DATABASE_URL) {
+  console.error("FATAL ERROR: DATABASE_URL is not defined. The application cannot start without a database connection string.");
+  process.exit(1);
+}
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   console.error("FATAL ERROR: Razorpay API keys are not defined. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment variables.");
   process.exit(1);
@@ -28,14 +32,21 @@ if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
+// --- DATABASE CONNECTION POOL ---
+// **FIX:** This configuration forces SSL on, which is required by Render.
+// The `rejectUnauthorized: false` is necessary because Render uses a self-signed certificate.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 const notificationClient = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: {
+      rejectUnauthorized: false
+    },
     max: 1
 });
 
@@ -78,8 +89,11 @@ const upload = multer({
 });
 
 async function initializeDatabase() {
+  let client;
   try {
-    await pool.query(`
+    client = await pool.connect();
+    console.log("Database connection successful for initialization.");
+    await client.query(`
       CREATE TABLE IF NOT EXISTS campaigns (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         title VARCHAR(255) NOT NULL,
@@ -93,7 +107,7 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    await pool.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS donations (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         campaign_id UUID REFERENCES campaigns(id) ON DELETE CASCADE,
@@ -105,7 +119,7 @@ async function initializeDatabase() {
         status VARCHAR(50) DEFAULT 'pending'
       )
     `);
-    await pool.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY,
         full_name TEXT,
@@ -127,7 +141,7 @@ async function initializeDatabase() {
         )
       )
     `);
-    await pool.query(`
+    await client.query(`
         CREATE OR REPLACE FUNCTION notify_campaign_update()
         RETURNS TRIGGER AS $$
         DECLARE
@@ -144,7 +158,7 @@ async function initializeDatabase() {
         END;
         $$ LANGUAGE plpgsql;
     `);
-    await pool.query(`
+    await client.query(`
         DO $$
         BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'campaign_update_trigger') THEN
@@ -158,7 +172,9 @@ async function initializeDatabase() {
     `);
     console.log('Database tables and triggers initialized successfully');
   } catch (err) {
-    console.error('Database initialization error:', err);
+    console.error('Database initialization error:', err.stack);
+  } finally {
+    if (client) client.release();
   }
 }
 
@@ -175,7 +191,7 @@ async function startRealTimeListener() {
         });
         console.log('PostgreSQL listener for campaign_updates started.');
     } catch (err) {
-        console.error('PostgreSQL listener error:', err);
+        console.error('PostgreSQL listener error:', err.stack);
     }
 }
 startRealTimeListener();
@@ -184,73 +200,47 @@ startRealTimeListener();
 
 // Signup Route
 app.post('/signup', async (req, res) => {
+  let client;
   try {
-    // **NEW:** Add a connection test at the beginning of the route.
-    // This helps diagnose if the server can reach the database at all.
-    try {
-      await pool.query('SELECT NOW()'); // A simple query to check the connection.
-    } catch (dbError) {
-      console.error('DATABASE CONNECTION FAILED:', dbError.stack);
-      // Send a more specific error message to the frontend.
-      return res.status(500).json({ success: false, message: 'Could not connect to the database.' });
-    }
+    client = await pool.connect();
+    console.log("Database connection successful for signup.");
 
     const {
-      full_name,
-      mobile_number,
-      email,
-      password,
-      dob,
-      address,
-      city,
-      pincode,
-      country,
-      occupation,
-      user_type,
-      account_type,
-      ngo_id,
+      full_name, mobile_number, email, password, dob, address, city,
+      pincode, country, occupation, user_type, account_type, ngo_id,
     } = req.body;
 
-    const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const userCheck = await client.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userCheck.rows.length > 0) {
-      return res.json({ success: false, message: 'Email already registered.' });
+      return res.status(409).json({ success: false, message: 'Email already registered.' });
     }
 
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 10);
     const dobForDb = dob || null;
 
-    await pool.query(
-      `INSERT INTO users 
-        (id, full_name, email, password_hash, user_type, account_type, mobile_number, ngo_id, dob, address, city, pincode, country, occupation)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+    await client.query(
+      `INSERT INTO users (id, full_name, email, password_hash, user_type, account_type, mobile_number, ngo_id, dob, address, city, pincode, country, occupation)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
-        id,
-        full_name,
-        email,
-        password_hash,
-        user_type,
-        account_type || null,
-        mobile_number || null,
-        ngo_id || null,
-        dobForDb,
-        address || null,
-        city || null,
-        pincode || null,
-        country || null,
-        occupation || null,
+        id, full_name, email, password_hash, user_type, account_type || null,
+        mobile_number || null, ngo_id || null, dobForDb, address || null,
+        city || null, pincode || null, country || null, occupation || null,
       ]
     );
 
-    res.json({ success: true, message: 'Signup successful!' });
+    res.status(201).json({ success: true, message: 'Signup successful!' });
 
   } catch (err) {
-    console.error('Signup error:', err.stack);
+    console.error('SIGNUP ROUTE FAILED:', err.stack);
     res.status(500).json({ success: false, message: 'Server error during signup.' });
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 });
 
-// ... (rest of the file is unchanged) ...
 
 // Login Route
 app.post('/login', async (req, res) => {
@@ -268,10 +258,12 @@ app.post('/login', async (req, res) => {
       res.json({ success: false, message: 'Invalid email or password' });
     }
   } catch (err) {
-    console.error('Login error:', err);
+    console.error('Login error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error during login.' });
   }
 });
+
+// --- CROWDFUNDING CAMPAIGN ROUTES ---
 
 app.get('/api/campaigns', async (req, res) => {
   try {
@@ -296,7 +288,7 @@ app.get('/api/campaigns', async (req, res) => {
       campaigns: result.rows
     });
   } catch (err) {
-    console.error('Get campaigns error:', err);
+    console.error('Get campaigns error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error fetching campaigns.' });
   }
 });
@@ -328,7 +320,7 @@ app.get('/api/campaigns/:id', async (req, res) => {
       campaign: result.rows[0]
     });
   } catch (err) {
-    console.error('Get campaign error:', err);
+    console.error('Get campaign error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error fetching campaign.' });
   }
 });
@@ -357,7 +349,7 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
       campaign_id: result.rows[0].id
     });
   } catch (err) {
-    console.error('Create campaign error:', err);
+    console.error('Create campaign error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error creating campaign.' });
   }
 });
@@ -396,7 +388,7 @@ app.post('/api/payments/create-order', async (req, res) => {
             currency: order.currency
         });
     } catch (err) {
-        console.error('Create order error:', err);
+        console.error('Create order error:', err.stack);
         res.status(500).json({ success: false, message: 'Server error creating order.' });
     }
 });
@@ -406,7 +398,6 @@ app.post('/api/payments/verify-payment', async (req, res) => {
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature,
-        amount
     } = req.body;
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
@@ -430,7 +421,7 @@ app.post('/api/payments/verify-payment', async (req, res) => {
             res.json({ success: true, message: 'Payment verified and campaign updated.' });
         } catch (err) {
             await client.query('ROLLBACK');
-            console.error('Payment verification database error:', err);
+            console.error('Payment verification database error:', err.stack);
             res.status(500).json({ success: false, message: 'Server error during payment verification.' });
         } finally {
             client.release();
@@ -454,7 +445,7 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
       donations: result.rows
     });
   } catch (err) {
-    console.error('Get donations error:', err);
+    console.error('Get donations error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error fetching donations.' });
   }
 });
