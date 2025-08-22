@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Signup = () => {
   // Initialize formData with all fields expected by the backend,
@@ -273,63 +274,6 @@ const Signup = () => {
             />
           </div>
 
-          {/* Example of how you might add userType selection.
-              If most users are 'user', you can keep userType as default 'user' in state
-              and not expose these fields unless necessary for 'campaign_owner' registration.
-          */}
-          {/*
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              I am signing up as:
-            </label>
-            <select
-              name="userType"
-              value={formData.userType}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
-            >
-              <option value="user">Individual User</option>
-              <option value="campaign_owner">Campaign Owner (NGO/Individual)</option>
-            </select>
-          </div>
-
-          {formData.userType === 'campaign_owner' && (
-            <>
-              <div>
-                <label className="block text-gray-700 font-medium mb-1">
-                  Account Type
-                </label>
-                <select
-                  name="accountType"
-                  value={formData.accountType}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
-                >
-                  <option value="">Select Account Type</option>
-                  <option value="individual">Individual</option>
-                  <option value="organization">Organization</option>
-                </select>
-              </div>
-
-              {formData.accountType === 'organization' && (
-                <div>
-                  <label className="block text-gray-700 font-medium mb-1">
-                    NGO ID (if applicable)
-                  </label>
-                  <input
-                    name="ngoId"
-                    type="text"
-                    placeholder="Enter NGO ID"
-                    value={formData.ngoId}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
-                  />
-                </div>
-              )}
-            </>
-          )}
-          */}
-
           <button
             type="submit"
             className="w-full mt-4 bg-lime-500 hover:bg-lime-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
@@ -340,12 +284,12 @@ const Signup = () => {
 
         <p className="text-center mt-4 text-sm text-gray-600">
           Already have an account?{" "}
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="text-lime-600 font-medium hover:underline"
           >
             Log in
-          </a>
+          </Link>
         </p>
       </div>
     </div>
