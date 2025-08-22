@@ -1,4 +1,11 @@
 require('dotenv').config();
+
+// --- PRE-STARTUP CHECKS ---
+if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+  console.error("FATAL ERROR: Razorpay API keys are not defined. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment variables.");
+  process.exit(1);
+}
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -8,65 +15,49 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-
-// NEW: Required for Real-Time Progress Bar
 const http = require('http');
 const { Server } = require('socket.io');
-
-// NEW: Required for Razorpay Integration
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
-// --- APP & SERVER SETUP ---
 const app = express();
-const server = http.createServer(app); // Use http.createServer for Socket.IO
+const server = http.createServer(app);
 const port = process.env.PORT || 3000;
 
-// Create uploads directory if it doesn't exist
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
-// --- DATABASE CONNECTION ---
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// NEW: Separate client for real-time PostgreSQL notifications
 const notificationClient = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 1 // We only need one client for listening
+    max: 1
 });
 
-// --- RAZORPAY CONFIGURATION ---
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// --- WEBSOCKET (SOCKET.IO) SETUP ---
 const io = new Server(server, {
   cors: {
-    origin: '*', // Adjust this to your frontend URL in production
+    origin: '*',
     methods: ['GET', 'POST'],
   },
 });
 
-// --- MIDDLEWARE ---
 app.use(cors());
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-
-// NEW: Middleware for Razorpay webhook (must be before bodyParser.json())
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
-
-// --- MULTER CONFIGURATION FOR IMAGE UPLOAD ---
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'uploads/');
@@ -86,10 +77,8 @@ const upload = multer({
   }
 });
 
-// --- DATABASE TABLES ---
 async function initializeDatabase() {
   try {
-    // Campaigns table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS campaigns (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -104,8 +93,6 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
-    // MODIFIED: Donations table to store Razorpay details
     await pool.query(`
       CREATE TABLE IF NOT EXISTS donations (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -118,8 +105,6 @@ async function initializeDatabase() {
         status VARCHAR(50) DEFAULT 'pending'
       )
     `);
-
-    // Users table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY,
@@ -142,8 +127,6 @@ async function initializeDatabase() {
         )
       )
     `);
-
-    // NEW: Trigger function for real-time updates
     await pool.query(`
         CREATE OR REPLACE FUNCTION notify_campaign_update()
         RETURNS TRIGGER AS $$
@@ -161,8 +144,6 @@ async function initializeDatabase() {
         END;
         $$ LANGUAGE plpgsql;
     `);
-
-    // NEW: Trigger to call the function after a campaign's raised_amount is updated
     await pool.query(`
         DO $$
         BEGIN
@@ -175,17 +156,14 @@ async function initializeDatabase() {
         END;
         $$;
     `);
-
     console.log('Database tables and triggers initialized successfully');
   } catch (err) {
     console.error('Database initialization error:', err);
   }
 }
 
-// Call the database initializer at startup
 initializeDatabase();
 
-// --- REAL-TIME LISTENER ---
 async function startRealTimeListener() {
     try {
         const client = await notificationClient.connect();
@@ -193,7 +171,6 @@ async function startRealTimeListener() {
         client.on('notification', (msg) => {
             console.log('PG notification received:', msg.channel);
             const payload = JSON.parse(msg.payload);
-            // Broadcast the updated campaign data to all connected clients
             io.emit('campaign_update', payload);
         });
         console.log('PostgreSQL listener for campaign_updates started.');
@@ -203,9 +180,6 @@ async function startRealTimeListener() {
 }
 startRealTimeListener();
 
-// --- AUTHENTICATION ROUTES ---
-
-// Signup Route
 app.post('/signup', async (req, res) => {
   const {
     full_name,
@@ -222,16 +196,13 @@ app.post('/signup', async (req, res) => {
     account_type,
     ngo_id,
   } = req.body;
-
   try {
     const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userCheck.rows.length > 0) {
       return res.json({ success: false, message: 'Email already registered.' });
     }
-
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 10);
-
     await pool.query(
       `INSERT INTO users 
         (id, full_name, email, password_hash, user_type, account_type, mobile_number, ngo_id, dob, address, city, pincode, country, occupation)
@@ -253,44 +224,33 @@ app.post('/signup', async (req, res) => {
         user_type === 'user' ? occupation : null,
       ]
     );
-
     res.json({ success: true, message: 'Signup successful!' });
-
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).json({ success: false, message: 'Server error during signup.' });
   }
 });
 
-// Login Route
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-
     if (result.rows.length === 0) {
       return res.json({ success: false, message: 'Invalid email!' });
     }
-
     const user = result.rows[0];
     const isValid = await bcrypt.compare(password, user.password_hash);
-
     if (isValid) {
       res.json({ success: true, message: 'Login successful' });
     } else {
       res.json({ success: false, message: 'Invalid email or password' });
     }
-
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ success: false, message: 'Server error during login.' });
   }
 });
 
-// --- CROWDFUNDING CAMPAIGN ROUTES ---
-
-// Get all campaigns with progress calculation
 app.get('/api/campaigns', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -309,7 +269,6 @@ app.get('/api/campaigns', async (req, res) => {
       FROM campaigns 
       ORDER BY created_at DESC
     `);
-
     res.json({
       success: true,
       campaigns: result.rows
@@ -320,7 +279,6 @@ app.get('/api/campaigns', async (req, res) => {
   }
 });
 
-// Get single campaign with progress
 app.get('/api/campaigns/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -340,11 +298,9 @@ app.get('/api/campaigns/:id', async (req, res) => {
       FROM campaigns 
       WHERE id = $1
     `, [id]);
-
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
     }
-
     res.json({
       success: true,
       campaign: result.rows[0]
@@ -355,7 +311,6 @@ app.get('/api/campaigns/:id', async (req, res) => {
   }
 });
 
-// Create new campaign
 app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   try {
     const {
@@ -365,19 +320,15 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
       creator_name,
       days_left
     } = req.body;
-
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Image is required' });
     }
-
     const image = req.file.filename;
-
     const result = await pool.query(`
       INSERT INTO campaigns (title, description, target_amount, creator_name, image, days_left)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
     `, [title, description, target_amount, creator_name, image, days_left]);
-
     res.json({
       success: true,
       message: 'Campaign created successfully',
@@ -389,21 +340,20 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   }
 });
 
-// NEW: RAZORPAY INTEGRATION ROUTES
-
-// Route to create a Razorpay order
 app.post('/api/payments/create-order', async (req, res) => {
     try {
         const { amount, campaignId, donorName } = req.body;
-
         if (!amount || !campaignId || !donorName) {
             return res.status(400).json({ success: false, message: 'Amount, campaignId, and donorName are required' });
         }
+        
+        // **FIX:** Shorten the receipt ID to be under 40 characters
+        const receiptId = `receipt_${uuidv4().substring(0, 20)}`;
 
         const options = {
-            amount: amount * 100, // amount in paisa
+            amount: amount * 100,
             currency: 'INR',
-            receipt: `receipt_${uuidv4()}`,
+            receipt: receiptId,
             notes: {
                 campaignId: campaignId,
                 donorName: donorName
@@ -412,7 +362,6 @@ app.post('/api/payments/create-order', async (req, res) => {
 
         const order = await razorpay.orders.create(options);
 
-        // Record a pending donation in the database
         await pool.query(
             'INSERT INTO donations (campaign_id, donor_name, amount, razorpay_order_id, status) VALUES ($1, $2, $3, $4, $5)',
             [campaignId, donorName, amount, order.id, 'pending']
@@ -431,7 +380,6 @@ app.post('/api/payments/create-order', async (req, res) => {
     }
 });
 
-// Route to verify a Razorpay payment
 app.post('/api/payments/verify-payment', async (req, res) => {
     const {
         razorpay_order_id,
@@ -439,35 +387,25 @@ app.post('/api/payments/verify-payment', async (req, res) => {
         razorpay_signature,
         amount
     } = req.body;
-
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
                                     .update(body.toString())
                                     .digest('hex');
-
     if (expectedSignature === razorpay_signature) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
-            
-            // Update donation status and payment ID
             await client.query(
                 `UPDATE donations SET razorpay_payment_id = $1, status = 'success' WHERE razorpay_order_id = $2`,
                 [razorpay_payment_id, razorpay_order_id]
             );
-
-            // Get campaign ID and amount from the donation record
             const donationResult = await client.query('SELECT campaign_id, amount FROM donations WHERE razorpay_order_id = $1', [razorpay_order_id]);
             const { campaign_id, amount: donationAmount } = donationResult.rows[0];
-            
-            // Update campaign raised amount and supporters count
             await client.query(
                 `UPDATE campaigns SET raised_amount = raised_amount + $1, supporters = supporters + 1 WHERE id = $2`,
                 [donationAmount, campaign_id]
             );
-
             await client.query('COMMIT');
-            
             res.json({ success: true, message: 'Payment verified and campaign updated.' });
         } catch (err) {
             await client.query('ROLLBACK');
@@ -481,7 +419,6 @@ app.post('/api/payments/verify-payment', async (req, res) => {
     }
 });
 
-// Get campaign donations
 app.get('/api/campaigns/:id/donations', async (req, res) => {
   try {
     const { id } = req.params;
@@ -491,7 +428,6 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
       WHERE campaign_id = $1 AND status = 'success'
       ORDER BY created_at DESC
     `, [id]);
-
     res.json({
       success: true,
       donations: result.rows
@@ -501,12 +437,6 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error fetching donations.' });
   }
 });
-
-
-// DUMMY DATA ENDPOINTS FOR TESTING
-// ... (The dummy data endpoints remain unchanged, but their logic might not
-//      perfectly align with the new Razorpay-based donation flow for testing).
-// ...
 
 app.post('/api/dummy/campaigns', async (req, res) => {
   try {
@@ -572,9 +502,7 @@ app.post('/api/dummy/campaigns', async (req, res) => {
         supporters: 567
       }
     ];
-
     const insertedCampaigns = [];
-    
     for (const campaign of dummyCampaigns) {
       const result = await pool.query(`
         INSERT INTO campaigns (title, description, target_amount, raised_amount, creator_name, image, days_left, supporters)
@@ -590,10 +518,8 @@ app.post('/api/dummy/campaigns', async (req, res) => {
         campaign.days_left,
         campaign.supporters
       ]);
-      
       insertedCampaigns.push(result.rows[0]);
     }
-
     res.json({
       success: true,
       message: `${insertedCampaigns.length} dummy campaigns created successfully`,
@@ -605,17 +531,13 @@ app.post('/api/dummy/campaigns', async (req, res) => {
   }
 });
 
-// Add dummy donations
 app.post('/api/dummy/donations', async (req, res) => {
   try {
-    // First get all campaign IDs
     const campaignsResult = await pool.query('SELECT id FROM campaigns');
     const campaignIds = campaignsResult.rows.map(row => row.id);
-    
     if (campaignIds.length === 0) {
       return res.status(400).json({ success: false, message: 'No campaigns found. Create campaigns first.' });
     }
-
     const dummyDonations = [
       { donor_name: "Rahul Verma", amount: 5000 },
       { donor_name: "Priya Singh", amount: 10000 },
@@ -633,22 +555,16 @@ app.post('/api/dummy/donations', async (req, res) => {
       { donor_name: "Ritika Bansal", amount: 13000 },
       { donor_name: "Gaurav Malhotra", amount: 5500 }
     ];
-
     const insertedDonations = [];
-
     for (const donation of dummyDonations) {
-      // Randomly assign to a campaign
       const randomCampaignId = campaignIds[Math.floor(Math.random() * campaignIds.length)];
-      
       const result = await pool.query(`
         INSERT INTO donations (campaign_id, donor_name, amount)
         VALUES ($1, $2, $3)
         RETURNING *
       `, [randomCampaignId, donation.donor_name, donation.amount]);
-      
       insertedDonations.push(result.rows[0]);
     }
-
     res.json({
       success: true,
       message: `${insertedDonations.length} dummy donations created successfully`,
@@ -660,12 +576,10 @@ app.post('/api/dummy/donations', async (req, res) => {
   }
 });
 
-// Clear all dummy data
 app.delete('/api/dummy/clear', async (req, res) => {
   try {
     await pool.query('DELETE FROM donations');
     await pool.query('DELETE FROM campaigns');
-    
     res.json({
       success: true,
       message: 'All dummy data cleared successfully'
@@ -676,14 +590,12 @@ app.delete('/api/dummy/clear', async (req, res) => {
   }
 });
 
-// Get database statistics
 app.get('/api/dummy/stats', async (req, res) => {
   try {
     const campaignsCount = await pool.query('SELECT COUNT(*) FROM campaigns');
     const donationsCount = await pool.query('SELECT COUNT(*) FROM donations');
     const totalRaised = await pool.query('SELECT SUM(raised_amount) FROM campaigns');
     const totalDonated = await pool.query('SELECT SUM(amount) FROM donations');
-    
     res.json({
       success: true,
       stats: {
@@ -699,12 +611,6 @@ app.get('/api/dummy/stats', async (req, res) => {
   }
 });
 
-
-// DELETED OLD DONATION ROUTE
-// app.post('/api/campaigns/:id/donate', ...)
-
-
-// Listen on HTTP server, not Express app
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
