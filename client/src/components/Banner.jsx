@@ -1,7 +1,5 @@
 import React from "react";
 import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick-theme.css";
 import { Link } from "react-router-dom";
 
 const bannerData = [
@@ -32,7 +30,6 @@ const bannerData = [
     buttonText: "Support Now",
     link: "/campaigns",
   },
-
   {
     image:
       "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1920&q=80",
