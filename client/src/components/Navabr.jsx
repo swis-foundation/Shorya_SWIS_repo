@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 function Navbar() {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
@@ -25,45 +26,37 @@ function Navbar() {
   const navItems = (
     <>
       <li>
-        <a
-          href="/"
+        <Link
+          to="/"
           className=" hover:text-green-600  transition block py-2 px-2"
         >
           Home
-        </a>
+        </Link>
       </li>
       <li>
-        <a
-          href="/aboutUs"
+        <Link
+          to="/aboutUs"
           className="hover:text-green-600 transition block py-2 px-2"
         >
           About Us
-        </a>
+        </Link>
       </li>
       <li>
-        <a
-          href="/how-it-works"
+        <Link
+          to="/how-it-works"
           className="hover:text-green-600 transition block py-2 px-2"
         >
           How it Works
-        </a>
+        </Link>
       </li>
       <li>
-        <a
-          href="/campaigns"
+        <Link
+          to="/campaigns"
           className="hover:text-green-600 transition block py-2 px-2"
         >
           Campaigns
-        </a>
+        </Link>
       </li>
-      {/* <li>
-        <a
-          href="/donatenow"
-          className="hover:text-green-600 transition block py-2 px-2"
-        >
-          Donate Now
-        </a>
-      </li> */}
     </>
   );
 
@@ -76,13 +69,13 @@ function Navbar() {
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 md:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <a href="/" className="flex items-center">
+          <Link to="/" className="flex items-center">
             <img
               src="https://images.squarespace-cdn.com/content/v1/591fb1cfb3db2b2e45f3350d/1526471032464-SHDL19LWGHHJ4M6KK3BX/Sustainable.jpg"
               alt="Logo"
               className="h-8 sm:h-10 w-auto object-contain"
             />
-          </a>
+          </Link>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex flex-1 justify-center">
@@ -93,18 +86,18 @@ function Navbar() {
 
           {/* Desktop Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <a
-              href="/signup"
+            <Link
+              to="/signup"
               className="border border-green-600 text-green-600 px-3 py-1 rounded-md text-sm hover:bg-green-600 hover:text-white transition"
             >
               Sign Up
-            </a>
-            <a
-              href="/start-campaign"
+            </Link>
+            <Link
+              to="/start-campaign"
               className="bg-green-600 text-white px-3 py-1 rounded-md text-sm hover:bg-green-700 transition"
             >
               Start Campaign
-            </a>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -144,18 +137,18 @@ function Navbar() {
           <div className="md:hidden mt-2 bg-white dark:bg-slate-800 rounded-md shadow-md px-4 py-3 text-sm text-gray-800 dark:text-white">
             <ul className="flex flex-col gap-1">{navItems}</ul>
             <div className="mt-3 flex flex-col gap-2">
-              <a
-                href="/signup"
+              <Link
+                to="/signup"
                 className="border border-green-600 text-green-600 py-2 text-center rounded-md hover:bg-green-600 hover:text-white transition"
               >
                 Sign Up
-              </a>
-              <a
-                href="/start-campaign"
+              </Link>
+              <Link
+                to="/start-campaign"
                 className="bg-green-600 hover:text-green-700 text-white py-2 text-center rounded-md hover:bg-green-700 transition"
               >
                 Start Campaign
-              </a>
+              </Link>
             </div>
           </div>
         )}
