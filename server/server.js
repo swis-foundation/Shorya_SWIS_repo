@@ -184,23 +184,33 @@ startRealTimeListener();
 
 // Signup Route
 app.post('/signup', async (req, res) => {
-  const {
-    full_name,
-    mobile_number,
-    email,
-    password,
-    dob, // This can be an empty string ""
-    address,
-    city,
-    pincode,
-    country,
-    occupation,
-    user_type,
-    account_type,
-    ngo_id,
-  } = req.body;
-
   try {
+    // **NEW:** Add a connection test at the beginning of the route.
+    // This helps diagnose if the server can reach the database at all.
+    try {
+      await pool.query('SELECT NOW()'); // A simple query to check the connection.
+    } catch (dbError) {
+      console.error('DATABASE CONNECTION FAILED:', dbError.stack);
+      // Send a more specific error message to the frontend.
+      return res.status(500).json({ success: false, message: 'Could not connect to the database.' });
+    }
+
+    const {
+      full_name,
+      mobile_number,
+      email,
+      password,
+      dob,
+      address,
+      city,
+      pincode,
+      country,
+      occupation,
+      user_type,
+      account_type,
+      ngo_id,
+    } = req.body;
+
     const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userCheck.rows.length > 0) {
       return res.json({ success: false, message: 'Email already registered.' });
@@ -208,9 +218,6 @@ app.post('/signup', async (req, res) => {
 
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 10);
-    
-    // **FIX:** Convert empty string for 'dob' to null before inserting.
-    // This prevents database errors for the DATE type column.
     const dobForDb = dob || null;
 
     await pool.query(
@@ -226,7 +233,7 @@ app.post('/signup', async (req, res) => {
         account_type || null,
         mobile_number || null,
         ngo_id || null,
-        dobForDb, // Use the corrected dob value
+        dobForDb,
         address || null,
         city || null,
         pincode || null,
@@ -242,6 +249,8 @@ app.post('/signup', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error during signup.' });
   }
 });
+
+// ... (rest of the file is unchanged) ...
 
 // Login Route
 app.post('/login', async (req, res) => {
@@ -263,8 +272,6 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error during login.' });
   }
 });
-
-// --- CROWDFUNDING CAMPAIGN ROUTES ---
 
 app.get('/api/campaigns', async (req, res) => {
   try {
@@ -451,8 +458,6 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error fetching donations.' });
   }
 });
-
-// ... (dummy data routes are unchanged) ...
 
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
