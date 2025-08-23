@@ -12,6 +12,7 @@ const StartCampaign = () => {
     target_amount: "",
     creator_name: "",
     days_left: "",
+    location: "", // Added location field
   });
   const [image, setImage] = useState(null);
   const [error, setError] = useState("");
@@ -37,8 +38,8 @@ const StartCampaign = () => {
     setLoading(true);
     setError("");
 
-    // Basic validation
-    if (!title || !description || !target_amount || !creator_name || !days_left || !image) {
+    // Basic validation, now includes location
+    if (!formData.title || !formData.description || !formData.target_amount || !formData.creator_name || !formData.days_left || !formData.location || !image) {
       setError("Please fill out all fields and upload an image.");
       setLoading(false);
       return;
@@ -51,6 +52,7 @@ const StartCampaign = () => {
     campaignData.append("target_amount", formData.target_amount);
     campaignData.append("creator_name", formData.creator_name);
     campaignData.append("days_left", formData.days_left);
+    campaignData.append("location", formData.location); // Added location to the form data
     campaignData.append("image", image);
 
     try {
@@ -75,8 +77,6 @@ const StartCampaign = () => {
     }
   };
 
-  const { title, description, target_amount, creator_name, days_left } = formData;
-
   return (
     <div className="min-h-screen bg-[#f9f8f4] flex justify-center items-center px-4 py-10">
       <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-lg">
@@ -94,9 +94,22 @@ const StartCampaign = () => {
             <input
               type="text"
               name="title"
-              value={title}
+              value={formData.title}
               onChange={handleChange}
               placeholder="e.g., Help Rebuild the Local Library"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
+            />
+          </div>
+
+          {/* Location Input Field */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Location</label>
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="e.g., Bhopal, Madhya Pradesh"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
             />
           </div>
@@ -106,7 +119,7 @@ const StartCampaign = () => {
             <label className="block text-gray-700 font-medium mb-1">Description</label>
             <textarea
               name="description"
-              value={description}
+              value={formData.description}
               onChange={handleChange}
               placeholder="Tell a compelling story about your cause"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
@@ -120,7 +133,7 @@ const StartCampaign = () => {
             <input
               type="number"
               name="target_amount"
-              value={target_amount}
+              value={formData.target_amount}
               onChange={handleChange}
               placeholder="e.g., 50000"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
@@ -133,7 +146,7 @@ const StartCampaign = () => {
             <input
               type="text"
               name="creator_name"
-              value={creator_name}
+              value={formData.creator_name}
               onChange={handleChange}
               placeholder="Enter your full name or organization name"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
@@ -146,7 +159,7 @@ const StartCampaign = () => {
             <input
               type="number"
               name="days_left"
-              value={days_left}
+              value={formData.days_left}
               onChange={handleChange}
               placeholder="e.g., 30"
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
