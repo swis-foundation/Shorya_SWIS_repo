@@ -139,8 +139,8 @@ const CampaignPage = () => {
                 ✅ This campaign is eligible for 80G Tax Exemption.
               </div>
               <SectionCard title="Campaign Information">
-                <Detail label="Location" value="Ganjam, Odisha" />
-                <Detail label="End Date" value={campaign.days_left} />
+                <Detail label="Location" value={campaign.location || 'Not specified'} />
+                <Detail label="End Date" value={`${campaign.days_left} days remaining`} />
                 <p className="text-red-500 font-semibold mt-2">
                   🕒 {campaign.days_left} Days Left
                 </p>
