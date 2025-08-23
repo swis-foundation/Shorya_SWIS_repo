@@ -33,8 +33,6 @@ if (!fs.existsSync('uploads')) {
 }
 
 // --- DATABASE CONNECTION POOL ---
-// **FIX:** This configuration forces SSL on, which is required by Render.
-// The `rejectUnauthorized: false` is necessary because Render uses a self-signed certificate.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -104,6 +102,7 @@ async function initializeDatabase() {
         image VARCHAR(255) NOT NULL,
         days_left INTEGER NOT NULL,
         supporters INTEGER DEFAULT 0,
+        location VARCHAR(255), -- ADDED THIS LINE
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -269,16 +268,8 @@ app.get('/api/campaigns', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        id,
-        title,
-        description,
-        target_amount,
-        raised_amount,
-        creator_name,
-        image,
-        days_left,
-        supporters,
-        created_at,
+        id, title, description, target_amount, raised_amount, 
+        creator_name, image, days_left, supporters, location, created_at,
         ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
       FROM campaigns 
       ORDER BY created_at DESC
@@ -298,16 +289,8 @@ app.get('/api/campaigns/:id', async (req, res) => {
     const { id } = req.params;
     const result = await pool.query(`
       SELECT 
-        id,
-        title,
-        description,
-        target_amount,
-        raised_amount,
-        creator_name,
-        image,
-        days_left,
-        supporters,
-        created_at,
+        id, title, description, target_amount, raised_amount, 
+        creator_name, image, days_left, supporters, location, created_at,
         ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
       FROM campaigns 
       WHERE id = $1
@@ -332,17 +315,18 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
       description,
       target_amount,
       creator_name,
-      days_left
+      days_left,
+      location
     } = req.body;
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Image is required' });
     }
     const image = req.file.filename;
     const result = await pool.query(`
-      INSERT INTO campaigns (title, description, target_amount, creator_name, image, days_left)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO campaigns (title, description, target_amount, creator_name, image, days_left, location)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
-    `, [title, description, target_amount, creator_name, image, days_left]);
+    `, [title, description, target_amount, creator_name, image, days_left, location]);
     res.json({
       success: true,
       message: 'Campaign created successfully',
