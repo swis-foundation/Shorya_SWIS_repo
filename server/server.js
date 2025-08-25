@@ -62,7 +62,12 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.static('public'));
-app.use('/uploads', express.static('uploads'));
+
+// **FIX:** This line tells Express to serve files from the 'uploads' directory.
+// Now, when your frontend requests an image like '/uploads/image-name.jpg',
+// the server will know where to find it.
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
@@ -102,7 +107,7 @@ async function initializeDatabase() {
         image VARCHAR(255) NOT NULL,
         days_left INTEGER NOT NULL,
         supporters INTEGER DEFAULT 0,
-        location VARCHAR(255), -- ADDED THIS LINE
+        location VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
