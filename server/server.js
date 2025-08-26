@@ -32,7 +32,6 @@ if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
 }
 
-// --- DATABASE CONNECTION POOL ---
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -62,12 +61,7 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.static('public'));
-
-// **FIX:** This line tells Express to serve files from the 'uploads' directory.
-// Now, when your frontend requests an image like '/uploads/image-name.jpg',
-// the server will know where to find it.
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
@@ -108,6 +102,7 @@ async function initializeDatabase() {
         days_left INTEGER NOT NULL,
         supporters INTEGER DEFAULT 0,
         location VARCHAR(255),
+        status VARCHAR(50) DEFAULT 'pending', -- ADDED THIS LINE
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -269,6 +264,7 @@ app.post('/login', async (req, res) => {
 
 // --- CROWDFUNDING CAMPAIGN ROUTES ---
 
+// GET all APPROVED campaigns route
 app.get('/api/campaigns', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -277,18 +273,17 @@ app.get('/api/campaigns', async (req, res) => {
         creator_name, image, days_left, supporters, location, created_at,
         ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
       FROM campaigns 
+      WHERE status = 'approved' -- MODIFIED: Only fetch approved campaigns
       ORDER BY created_at DESC
     `);
-    res.json({
-      success: true,
-      campaigns: result.rows
-    });
+    res.json({ success: true, campaigns: result.rows });
   } catch (err) {
     console.error('Get campaigns error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error fetching campaigns.' });
   }
 });
 
+// GET single campaign route
 app.get('/api/campaigns/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -303,16 +298,14 @@ app.get('/api/campaigns/:id', async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
     }
-    res.json({
-      success: true,
-      campaign: result.rows[0]
-    });
+    res.json({ success: true, campaign: result.rows[0] });
   } catch (err) {
     console.error('Get campaign error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error fetching campaign.' });
   }
 });
 
+// POST new campaign route (will be 'pending' by default)
 app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   try {
     const {
@@ -327,14 +320,15 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'Image is required' });
     }
     const image = req.file.filename;
+    // The 'status' column will use its default 'pending' value
     const result = await pool.query(`
       INSERT INTO campaigns (title, description, target_amount, creator_name, image, days_left, location)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
     `, [title, description, target_amount, creator_name, image, days_left, location]);
-    res.json({
+    res.status(201).json({
       success: true,
-      message: 'Campaign created successfully',
+      message: 'Campaign created successfully and is pending approval.',
       campaign_id: result.rows[0].id
     });
   } catch (err) {
@@ -342,6 +336,46 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error creating campaign.' });
   }
 });
+
+// --- NEW ADMIN ROUTES ---
+
+// GET all pending campaigns for admin
+app.get('/api/admin/campaigns/pending', async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM campaigns WHERE status = 'pending' ORDER BY created_at ASC");
+    res.json({ success: true, campaigns: result.rows });
+  } catch (err) {
+    console.error('Error fetching pending campaigns:', err.stack);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// UPDATE campaign status (approve/reject)
+app.put('/api/admin/campaigns/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; // Expecting 'approved' or 'rejected'
+
+  if (!['approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid status.' });
+  }
+
+  try {
+    const result = await pool.query(
+      "UPDATE campaigns SET status = $1 WHERE id = $2 RETURNING *",
+      [status, id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Campaign not found.' });
+    }
+    res.json({ success: true, message: `Campaign has been ${status}.`, campaign: result.rows[0] });
+  } catch (err) {
+    console.error(`Error updating campaign status to ${status}:`, err.stack);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+
+// --- PAYMENT ROUTES ---
 
 app.post('/api/payments/create-order', async (req, res) => {
     try {
