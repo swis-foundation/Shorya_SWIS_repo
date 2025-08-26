@@ -12,7 +12,7 @@ const StartCampaign = () => {
     target_amount: "",
     creator_name: "",
     days_left: "",
-    location: "", // Added location field
+    location: "",
   });
   const [image, setImage] = useState(null);
   const [error, setError] = useState("");
@@ -52,7 +52,7 @@ const StartCampaign = () => {
     campaignData.append("target_amount", formData.target_amount);
     campaignData.append("creator_name", formData.creator_name);
     campaignData.append("days_left", formData.days_left);
-    campaignData.append("location", formData.location); // Added location to the form data
+    campaignData.append("location", formData.location);
     campaignData.append("image", image);
 
     try {
@@ -64,8 +64,9 @@ const StartCampaign = () => {
       const result = await response.json();
 
       if (result.success) {
-        alert("Campaign created successfully!");
-        navigate(`/campaigns/${result.campaign_id}`); // Redirect to the new campaign page
+        // MODIFIED: Update the user feedback and redirect for the admin approval flow
+        alert("Campaign submitted for approval! You will be notified once it is reviewed.");
+        navigate(`/campaigns`); // Redirect to the main campaigns page
       } else {
         setError(result.message || "Failed to create campaign.");
       }
@@ -187,7 +188,7 @@ const StartCampaign = () => {
             disabled={loading}
             className="w-full py-3 bg-lime-600 hover:bg-lime-700 text-white font-bold rounded-lg mt-4 transition duration-300 disabled:bg-gray-400"
           >
-            {loading ? "Creating..." : "Create Campaign"}
+            {loading ? "Submitting for Approval..." : "Submit Campaign"}
           </button>
         </form>
       </div>
