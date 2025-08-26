@@ -8,6 +8,9 @@ import CampaignsDetils from "./components/campaign/CampaignsDetils";
 import CampaignPage from "./components/campaign/CampaignPage";
 import Startcampaign from "./components/campaign/Startcampaign";
 import Paynow from "./components/Paynow";
+import AboutUs from "./components/AboutUs";
+import HowItWorks from "./components/HowItWorks";
+import AdminDashboard from "./components/admin/AdminDashboard"; // Import the new component
 
 const App = () => {
   return (
@@ -16,13 +19,17 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/aboutUs" element={<AboutUs />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/campaigns" element={<CampaignsDetils />} />
-        {/* Dynamic route for all campaign pages */}
         <Route path="/campaigns/:id" element={<CampaignPage />} />
         <Route path="/start-campaign" element={<Startcampaign />} />
-        {/* Dynamic route for the payment page */}
         <Route path="/campaigns/:id/donate" element={<Paynow />} />
-        <Route path="*" element={<div>404, Sudipta</div>} />
+        
+        {/* ADD THE ADMIN ROUTE */}
+        <Route path="/admin" element={<AdminDashboard />} />
+
+        <Route path="*" element={<div>404, Page Not Found</div>} />
       </Routes>
     </Router>
   );
