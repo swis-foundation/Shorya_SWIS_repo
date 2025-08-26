@@ -1,64 +1,6 @@
 import React from "react";
 import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
-
-// const bannerData = [
-//   {
-//     image:
-//       "https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&w=1920&q=80",
-//     heading: "Empowering",
-//     subheading: "Communities Together",
-//     tagline: "Together we grow stronger",
-//     buttonText: "Explore",
-//     link: "/explore",
-//   },
-//   {
-//     image:
-//       "https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&w=1920&q=80",
-//     heading: "Building",
-//     subheading: "Brighter Futures",
-//     tagline: "Make an impact today",
-//     buttonText: "Get Involved",
-//     link: "/get-involved",
-//   },
-//   {
-//     image:
-//       "https://images.unsplash.com/photo-1617003657420-7fbb5c3ed6c4?auto=format&fit=crop&w=1920&q=80",
-//     heading: "Inspiring",
-//     subheading: "Change Daily",
-//     tagline: "Join our mission for good",
-//     buttonText: "Support Now",
-//     link: "/support",
-//   },
-//   {
-//     image:
-//       "https://images.unsplash.com/photo-1603575448366-599de7b62a98?auto=format&fit=crop&w=1920&q=80",
-//     heading: "Feeding",
-//     subheading: "The Hungry",
-//     tagline: "Every meal matters",
-//     buttonText: "Donate Now",
-//     link: "/donate",
-//   },
-//   {
-//     image:
-//       "https://images.unsplash.com/photo-1506784365847-bbad939e9335?auto=format&fit=crop&w=1920&q=80",
-//     heading: "Educating",
-//     subheading: "Future Leaders",
-//     tagline: "Education is empowerment",
-//     buttonText: "Volunteer",
-//     link: "/volunteer",
-//   },
-//   {
-//     image:
-//       "https://images.unsplash.com/photo-1629212173186-3c8d186b7c6c?auto=format&fit=crop&w=1920&q=80",
-//     heading: "Healing",
-//     subheading: "Through Care",
-//     tagline: "Your help brings hope",
-//     buttonText: "Care With Us",
-//     link: "/care",
-//   },
-// ];
+import { Link } from "react-router-dom";
 
 const bannerData = [
   {
@@ -68,7 +10,7 @@ const bannerData = [
     subheading: "Communities Together",
     tagline: "Together we grow stronger",
     buttonText: "Explore",
-    link: "/explore",
+    link: "/campaigns",
   },
   {
     image:
@@ -77,7 +19,7 @@ const bannerData = [
     subheading: "Brighter Futures",
     tagline: "Make an impact today",
     buttonText: "Get Involved",
-    link: "/get-involved",
+    link: "/campaigns",
   },
   {
     image:
@@ -86,9 +28,8 @@ const bannerData = [
     subheading: "Change Daily",
     tagline: "Join our mission for good",
     buttonText: "Support Now",
-    link: "/support",
+    link: "/campaigns",
   },
-
   {
     image:
       "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1920&q=80",
@@ -96,7 +37,7 @@ const bannerData = [
     subheading: "Future Leaders",
     tagline: "Education is empowerment",
     buttonText: "Volunteer",
-    link: "/volunteer",
+    link: "/start-campaign",
   },
   {
     image:
@@ -105,7 +46,7 @@ const bannerData = [
     subheading: "Through Care",
     tagline: "Your help brings hope",
     buttonText: "Care With Us",
-    link: "/care",
+    link: "/campaigns",
   },
 ];
 
@@ -144,9 +85,9 @@ export default function Banner() {
                   {item.heading} <span>{item.subheading}</span>
                 </h1>
                 <p className="banner-tagline">{item.tagline}</p>
-                <a href={item.link} className="banner-button">
+                <Link to={item.link} className="banner-button">
                   {item.buttonText}
-                </a>
+                </Link>
               </div>
             </div>
           ))}

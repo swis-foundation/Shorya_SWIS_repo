@@ -4,6 +4,16 @@ import RealTimeProgressBar from "./RealTimeProgressBar";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
+// Helper function to create a short description from the full text
+const getShortDescription = (description) => {
+  if (!description) {
+    return "";
+  }
+  // Split by sentences, take the first two, and join them back.
+  const sentences = description.match(/[^.!?]+[.!?]+/g) || [];
+  return sentences.slice(0, 2).join(" ");
+};
+
 const SectionCard = ({ title, children }) => (
   <div className="bg-white p-6 md:p-8 rounded-xl shadow-xl">
     <h3 className="text-xl md:text-2xl font-semibold text-lime-600 mb-4">
@@ -77,6 +87,9 @@ const CampaignPage = () => {
     );
   }
 
+  // Generate the short description once the campaign data is loaded
+  const shortDescription = getShortDescription(campaign.description);
+
   return (
     <div className="bg-[#f9f8f3] min-h-screen font-sans">
       {/* Header */}
@@ -84,8 +97,9 @@ const CampaignPage = () => {
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 leading-snug">
           {campaign.title}
         </h1>
+        {/* MODIFIED: Display the short description here */}
         <p className="text-lg md:text-xl text-gray-600 mt-4 max-w-3xl">
-          {campaign.description}
+          {shortDescription}
         </p>
       </div>
 
@@ -133,14 +147,15 @@ const CampaignPage = () => {
           {activeTab === "details" && (
             <>
               <SectionCard title="About the Campaign">
-                <p>{campaign.description}</p>
+                {/* Display the FULL description here */}
+                <p className="whitespace-pre-wrap">{campaign.description}</p>
               </SectionCard>
               <div className="bg-green-50 border border-green-300 text-green-800 text-base p-4 rounded-xl shadow-md">
                 ✅ This campaign is eligible for 80G Tax Exemption.
               </div>
               <SectionCard title="Campaign Information">
-                <Detail label="Location" value="Ganjam, Odisha" />
-                <Detail label="End Date" value={campaign.days_left} />
+                <Detail label="Location" value={campaign.location || 'Not specified'} />
+                <Detail label="End Date" value={`${campaign.days_left} days remaining`} />
                 <p className="text-red-500 font-semibold mt-2">
                   🕒 {campaign.days_left} Days Left
                 </p>
@@ -165,7 +180,6 @@ const CampaignPage = () => {
               raised of ₹{campaign.target_amount.toLocaleString()} Goal
             </h3>
 
-            {/* NEW: Real-time progress bar component */}
             <RealTimeProgressBar
               campaignId={campaign.id}
               initialRaised={campaign.raised_amount}
