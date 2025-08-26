@@ -13,9 +13,6 @@ import AboutUs from "./components/AboutUs";
 import HowItWorks from "./components/HowItWorks";
 import AdminDashboard from "./components/admin/AdminDashboard"; // Import the new component
 
-import AboutUs from "./components/AboutUs"; // Import the new component
-import HowItWorks from "./components/HowItWorks"; // Import the new component
-
 
 const App = () => {
         return (
