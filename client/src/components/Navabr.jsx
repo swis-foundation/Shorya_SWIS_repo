@@ -57,6 +57,15 @@ function Navbar() {
           Campaigns
         </Link>
       </li>
+      {/* ADDED THIS LINK */}
+      <li>
+        <Link
+          to="/admin"
+          className="hover:text-green-600 transition block py-2 px-2"
+        >
+          Admin
+        </Link>
+      </li>
     </>
   );
 
