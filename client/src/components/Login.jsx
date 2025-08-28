@@ -45,15 +45,12 @@ const Login = () => {
 
       if (data.success) {
         alert("Login successful!");
-        // Save user info to localStorage
+        // Save user info to localStorage so the navbar can see it
         localStorage.setItem('user', JSON.stringify(data.user));
 
-        // **MODIFIED:** Redirect based on user type
-        if (data.user.user_type === 'admin') {
-          navigate("/admin");
-        } else {
-          navigate("/");
-        }
+        // **FIX:** Always redirect to the homepage after login.
+        // The navbar will handle showing the correct links.
+        navigate("/");
       } else {
         setError(data.message || "Login failed. Please check your credentials.");
       }
