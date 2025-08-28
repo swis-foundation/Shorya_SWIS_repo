@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 
-// Use the environment variable for the backend URL
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 const Login = () => {
@@ -15,7 +14,6 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Handles changes for text inputs
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -23,10 +21,9 @@ const Login = () => {
     });
   };
 
-  // Handles the form submission
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent the default browser form submission
-    setError(""); // Clear previous errors
+    e.preventDefault();
+    setError("");
     setLoading(true);
 
     if (!formData.email || !formData.password) {
@@ -48,7 +45,15 @@ const Login = () => {
 
       if (data.success) {
         alert("Login successful!");
-        navigate("/"); // Redirect to the homepage on successful login
+        // Save user info to localStorage
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // **MODIFIED:** Redirect based on user type
+        if (data.user.user_type === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
       } else {
         setError(data.message || "Login failed. Please check your credentials.");
       }
@@ -107,7 +112,6 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Display server error message */}
           {error && (
             <p className="text-red-500 text-sm text-center bg-red-100 p-2 rounded-md">
               {error}
