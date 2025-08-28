@@ -102,7 +102,7 @@ async function initializeDatabase() {
         days_left INTEGER NOT NULL,
         supporters INTEGER DEFAULT 0,
         location VARCHAR(255),
-        status VARCHAR(50) DEFAULT 'pending', -- ADDED THIS LINE
+        status VARCHAR(50) DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -197,7 +197,6 @@ startRealTimeListener();
 
 // --- AUTHENTICATION ROUTES ---
 
-// Signup Route
 app.post('/signup', async (req, res) => {
   let client;
   try {
@@ -247,14 +246,22 @@ app.post('/login', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) {
-      return res.json({ success: false, message: 'Invalid email!' });
+      return res.status(404).json({ success: false, message: 'Invalid email!' });
     }
     const user = result.rows[0];
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (isValid) {
-      res.json({ success: true, message: 'Login successful' });
+      // **MODIFIED:** Send back the user's role
+      res.json({
+        success: true,
+        message: 'Login successful',
+        user: {
+          email: user.email,
+          user_type: user.user_type // Send the user type to the frontend
+        }
+      });
     } else {
-      res.json({ success: false, message: 'Invalid email or password' });
+      res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
   } catch (err) {
     console.error('Login error:', err.stack);
