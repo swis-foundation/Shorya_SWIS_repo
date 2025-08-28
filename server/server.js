@@ -102,7 +102,7 @@ async function initializeDatabase() {
         end_date TIMESTAMP NOT NULL,
         supporters INTEGER DEFAULT 0,
         location VARCHAR(255),
-        category VARCHAR(100), -- ADDED THIS LINE
+        category VARCHAR(100),
         status VARCHAR(50) DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -257,9 +257,8 @@ app.post('/login', async (req, res) => {
 
 // --- CROWDFUNDING CAMPAIGN ROUTES ---
 
-// GET all APPROVED campaigns route, now with category filtering
 app.get('/api/campaigns', async (req, res) => {
-  const { category } = req.query; // Check for a category query parameter
+  const { category } = req.query;
   let query = `
     SELECT 
       id, title, description, target_amount, raised_amount, 
@@ -288,14 +287,20 @@ app.get('/api/campaigns', async (req, res) => {
   }
 });
 
-// **NEW ROUTE:** Get all unique categories
+// **MODIFIED:** This route now calculates the total goal and raised amounts for each category.
 app.get('/api/categories', async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT DISTINCT category FROM campaigns WHERE status = 'approved' AND category IS NOT NULL"
-    );
-    const categories = result.rows.map(row => row.category);
-    res.json({ success: true, categories });
+    const result = await pool.query(`
+      SELECT 
+        category, 
+        SUM(target_amount) as total_goal, 
+        SUM(raised_amount) as total_raised
+      FROM campaigns 
+      WHERE status = 'approved' AND category IS NOT NULL 
+      GROUP BY category
+      ORDER BY category
+    `);
+    res.json({ success: true, categories: result.rows });
   } catch (err) {
     console.error('Get categories error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error fetching categories.' });
@@ -325,7 +330,6 @@ app.get('/api/campaigns/:id', async (req, res) => {
   }
 });
 
-// POST new campaign route
 app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   try {
     const {
