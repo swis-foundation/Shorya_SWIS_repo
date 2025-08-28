@@ -6,8 +6,10 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 const CategoryCard = ({ categoryData, onClick }) => {
   const { category, total_goal, total_raised } = categoryData;
+  // Calculate the percentage, which can go above 100
   const percentage = total_goal > 0 ? (total_raised / total_goal) * 100 : 0;
   const progressStyle = {
+    // The visual bar is capped at 100% width
     width: `${Math.min(percentage, 100)}%`
   };
 
@@ -20,11 +22,18 @@ const CategoryCard = ({ categoryData, onClick }) => {
         <h3 className="text-lg font-semibold text-lime-600 mb-3">{category}</h3>
       </div>
       <div>
+        <div className="flex justify-between items-center mb-1">
+          <p className="text-sm text-gray-600">
+            <strong>₹{Number(total_raised).toLocaleString()}</strong> raised
+          </p>
+          {/* Display the percentage, rounded to the nearest whole number */}
+          <p className="text-sm font-bold text-lime-600">{Math.round(percentage)}%</p>
+        </div>
         <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
           <div className="bg-lime-500 h-2.5 rounded-full" style={progressStyle}></div>
         </div>
-        <p className="text-sm text-gray-600">
-          <strong>₹{Number(total_raised).toLocaleString()}</strong> raised of ₹{Number(total_goal).toLocaleString()}
+        <p className="text-xs text-gray-500 text-right">
+          Goal: ₹{Number(total_goal).toLocaleString()}
         </p>
       </div>
     </div>
