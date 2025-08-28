@@ -4,14 +4,32 @@ import { FaArrowLeft } from "react-icons/fa";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
-const CategoryCard = ({ category, onClick }) => (
-  <div 
-    onClick={() => onClick(category)}
-    className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 cursor-pointer text-center"
-  >
-    <h3 className="text-lg font-semibold text-lime-600">{category}</h3>
-  </div>
-);
+const CategoryCard = ({ categoryData, onClick }) => {
+  const { category, total_goal, total_raised } = categoryData;
+  const percentage = total_goal > 0 ? (total_raised / total_goal) * 100 : 0;
+  const progressStyle = {
+    width: `${Math.min(percentage, 100)}%`
+  };
+
+  return (
+    <div 
+      onClick={() => onClick(category)}
+      className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 cursor-pointer flex flex-col justify-between"
+    >
+      <div>
+        <h3 className="text-lg font-semibold text-lime-600 mb-3">{category}</h3>
+      </div>
+      <div>
+        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+          <div className="bg-lime-500 h-2.5 rounded-full" style={progressStyle}></div>
+        </div>
+        <p className="text-sm text-gray-600">
+          <strong>₹{Number(total_raised).toLocaleString()}</strong> raised of ₹{Number(total_goal).toLocaleString()}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const CampaignCard = ({ campaign }) => {
   const navigate = useNavigate();
@@ -129,7 +147,7 @@ const CampaignsDetails = () => {
       {!loading && !error && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {!selectedCategory 
-            ? categories.map(cat => <CategoryCard key={cat} category={cat} onClick={setSelectedCategory} />)
+            ? categories.map(catData => <CategoryCard key={catData.category} categoryData={catData} onClick={setSelectedCategory} />)
             : campaigns.map(camp => <CampaignCard key={camp.id} campaign={camp} />)
           }
         </div>
