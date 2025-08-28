@@ -8,12 +8,13 @@ function Navbar() {
   const navigate = useNavigate();
 
   // This effect checks for a logged-in user when the component loads
+  // and whenever the user navigates, ensuring the navbar is always up-to-date.
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
-  }, []);
+  }, [navigate]); // Rerunning on navigation change helps keep it in sync
 
   const handleLogout = () => {
     localStorage.removeItem("user");
