@@ -197,11 +197,11 @@ startRealTimeListener();
 
 // --- AUTHENTICATION ROUTES ---
 
+// Signup Route
 app.post('/signup', async (req, res) => {
   let client;
   try {
     client = await pool.connect();
-    console.log("Database connection successful for signup.");
 
     const {
       full_name, mobile_number, email, password, dob, address, city,
@@ -215,15 +215,23 @@ app.post('/signup', async (req, res) => {
 
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 10);
+    
+    // **FIX:** This logic ensures that any empty string "" is converted to null
+    // before being sent to the database. This is the key to fixing the error.
     const dobForDb = dob || null;
+    const addressForDb = address || null;
+    const cityForDb = city || null;
+    const pincodeForDb = pincode || null;
+    const countryForDb = country || null;
+    const occupationForDb = occupation || null;
 
     await client.query(
       `INSERT INTO users (id, full_name, email, password_hash, user_type, account_type, mobile_number, ngo_id, dob, address, city, pincode, country, occupation)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         id, full_name, email, password_hash, user_type, account_type || null,
-        mobile_number || null, ngo_id || null, dobForDb, address || null,
-        city || null, pincode || null, country || null, occupation || null,
+        mobile_number || null, ngo_id || null, dobForDb, addressForDb,
+        cityForDb, pincodeForDb, countryForDb, occupationForDb,
       ]
     );
 
@@ -251,13 +259,12 @@ app.post('/login', async (req, res) => {
     const user = result.rows[0];
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (isValid) {
-      // **MODIFIED:** Send back the user's role
       res.json({
         success: true,
         message: 'Login successful',
         user: {
           email: user.email,
-          user_type: user.user_type // Send the user type to the frontend
+          user_type: user.user_type
         }
       });
     } else {
@@ -271,7 +278,6 @@ app.post('/login', async (req, res) => {
 
 // --- CROWDFUNDING CAMPAIGN ROUTES ---
 
-// GET all APPROVED campaigns route
 app.get('/api/campaigns', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -280,7 +286,7 @@ app.get('/api/campaigns', async (req, res) => {
         creator_name, image, days_left, supporters, location, created_at,
         ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
       FROM campaigns 
-      WHERE status = 'approved' -- MODIFIED: Only fetch approved campaigns
+      WHERE status = 'approved'
       ORDER BY created_at DESC
     `);
     res.json({ success: true, campaigns: result.rows });
@@ -290,7 +296,6 @@ app.get('/api/campaigns', async (req, res) => {
   }
 });
 
-// GET single campaign route
 app.get('/api/campaigns/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -312,7 +317,6 @@ app.get('/api/campaigns/:id', async (req, res) => {
   }
 });
 
-// POST new campaign route (will be 'pending' by default)
 app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   try {
     const {
@@ -327,7 +331,6 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'Image is required' });
     }
     const image = req.file.filename;
-    // The 'status' column will use its default 'pending' value
     const result = await pool.query(`
       INSERT INTO campaigns (title, description, target_amount, creator_name, image, days_left, location)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -344,9 +347,8 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   }
 });
 
-// --- NEW ADMIN ROUTES ---
+// --- ADMIN ROUTES ---
 
-// GET all pending campaigns for admin
 app.get('/api/admin/campaigns/pending', async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM campaigns WHERE status = 'pending' ORDER BY created_at ASC");
@@ -357,10 +359,9 @@ app.get('/api/admin/campaigns/pending', async (req, res) => {
   }
 });
 
-// UPDATE campaign status (approve/reject)
 app.put('/api/admin/campaigns/:id/status', async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body; // Expecting 'approved' or 'rejected'
+  const { status } = req.body;
 
   if (!['approved', 'rejected'].includes(status)) {
     return res.status(400).json({ success: false, message: 'Invalid status.' });
