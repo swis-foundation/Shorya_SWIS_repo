@@ -99,7 +99,7 @@ async function initializeDatabase() {
         raised_amount DECIMAL(10,2) DEFAULT 0,
         creator_name VARCHAR(255) NOT NULL,
         image VARCHAR(255) NOT NULL,
-        days_left INTEGER NOT NULL,
+        end_date TIMESTAMP NOT NULL, -- MODIFIED: Changed days_left to end_date
         supporters INTEGER DEFAULT 0,
         location VARCHAR(255),
         status VARCHAR(50) DEFAULT 'pending',
@@ -197,58 +197,39 @@ startRealTimeListener();
 
 // --- AUTHENTICATION ROUTES ---
 
-// Signup Route
 app.post('/signup', async (req, res) => {
   let client;
   try {
     client = await pool.connect();
-
     const {
       full_name, mobile_number, email, password, dob, address, city,
       pincode, country, occupation, user_type, account_type, ngo_id,
     } = req.body;
-
     const userCheck = await client.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userCheck.rows.length > 0) {
       return res.status(409).json({ success: false, message: 'Email already registered.' });
     }
-
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 10);
-    
-    // **FIX:** This logic ensures that any empty string "" is converted to null
-    // before being sent to the database. This is the key to fixing the error.
     const dobForDb = dob || null;
-    const addressForDb = address || null;
-    const cityForDb = city || null;
-    const pincodeForDb = pincode || null;
-    const countryForDb = country || null;
-    const occupationForDb = occupation || null;
-
     await client.query(
       `INSERT INTO users (id, full_name, email, password_hash, user_type, account_type, mobile_number, ngo_id, dob, address, city, pincode, country, occupation)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         id, full_name, email, password_hash, user_type, account_type || null,
-        mobile_number || null, ngo_id || null, dobForDb, addressForDb,
-        cityForDb, pincodeForDb, countryForDb, occupationForDb,
+        mobile_number || null, ngo_id || null, dobForDb, address || null,
+        city || null, pincode || null, country || null, occupation || null,
       ]
     );
-
     res.status(201).json({ success: true, message: 'Signup successful!' });
-
   } catch (err) {
     console.error('SIGNUP ROUTE FAILED:', err.stack);
     res.status(500).json({ success: false, message: 'Server error during signup.' });
   } finally {
-    if (client) {
-      client.release();
-    }
+    if (client) client.release();
   }
 });
 
-
-// Login Route
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -262,10 +243,7 @@ app.post('/login', async (req, res) => {
       res.json({
         success: true,
         message: 'Login successful',
-        user: {
-          email: user.email,
-          user_type: user.user_type
-        }
+        user: { email: user.email, user_type: user.user_type }
       });
     } else {
       res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -283,7 +261,9 @@ app.get('/api/campaigns', async (req, res) => {
     const result = await pool.query(`
       SELECT 
         id, title, description, target_amount, raised_amount, 
-        creator_name, image, days_left, supporters, location, created_at,
+        creator_name, image, 
+        GREATEST(0, FLOOR(DATE_PART('day', end_date - NOW()))) as days_left,
+        supporters, location, created_at,
         ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
       FROM campaigns 
       WHERE status = 'approved'
@@ -302,7 +282,9 @@ app.get('/api/campaigns/:id', async (req, res) => {
     const result = await pool.query(`
       SELECT 
         id, title, description, target_amount, raised_amount, 
-        creator_name, image, days_left, supporters, location, created_at,
+        creator_name, image,
+        GREATEST(0, FLOOR(DATE_PART('day', end_date - NOW()))) as days_left,
+        supporters, location, created_at,
         ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
       FROM campaigns 
       WHERE id = $1
@@ -320,22 +302,21 @@ app.get('/api/campaigns/:id', async (req, res) => {
 app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   try {
     const {
-      title,
-      description,
-      target_amount,
-      creator_name,
-      days_left,
-      location
+      title, description, target_amount, creator_name, days_left, location
     } = req.body;
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Image is required' });
     }
     const image = req.file.filename;
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + parseInt(days_left, 10));
+
     const result = await pool.query(`
-      INSERT INTO campaigns (title, description, target_amount, creator_name, image, days_left, location)
+      INSERT INTO campaigns (title, description, target_amount, creator_name, image, end_date, location)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id
-    `, [title, description, target_amount, creator_name, image, days_left, location]);
+    `, [title, description, target_amount, creator_name, image, endDate, location]);
+    
     res.status(201).json({
       success: true,
       message: 'Campaign created successfully and is pending approval.',
@@ -362,11 +343,9 @@ app.get('/api/admin/campaigns/pending', async (req, res) => {
 app.put('/api/admin/campaigns/:id/status', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-
   if (!['approved', 'rejected'].includes(status)) {
     return res.status(400).json({ success: false, message: 'Invalid status.' });
   }
-
   try {
     const result = await pool.query(
       "UPDATE campaigns SET status = $1 WHERE id = $2 RETURNING *",
@@ -382,7 +361,6 @@ app.put('/api/admin/campaigns/:id/status', async (req, res) => {
   }
 });
 
-
 // --- PAYMENT ROUTES ---
 
 app.post('/api/payments/create-order', async (req, res) => {
@@ -391,26 +369,18 @@ app.post('/api/payments/create-order', async (req, res) => {
         if (!amount || !campaignId || !donorName) {
             return res.status(400).json({ success: false, message: 'Amount, campaignId, and donorName are required' });
         }
-        
         const receiptId = `receipt_${uuidv4().substring(0, 20)}`;
-
         const options = {
             amount: amount * 100,
             currency: 'INR',
             receipt: receiptId,
-            notes: {
-                campaignId: campaignId,
-                donorName: donorName
-            }
+            notes: { campaignId, donorName }
         };
-
         const order = await razorpay.orders.create(options);
-
         await pool.query(
             'INSERT INTO donations (campaign_id, donor_name, amount, razorpay_order_id, status) VALUES ($1, $2, $3, $4, $5)',
             [campaignId, donorName, amount, order.id, 'pending']
         );
-
         res.json({
             success: true,
             orderId: order.id,
@@ -425,11 +395,7 @@ app.post('/api/payments/create-order', async (req, res) => {
 });
 
 app.post('/api/payments/verify-payment', async (req, res) => {
-    const {
-        razorpay_order_id,
-        razorpay_payment_id,
-        razorpay_signature,
-    } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
                                     .update(body.toString())
