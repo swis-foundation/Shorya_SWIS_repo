@@ -99,9 +99,10 @@ async function initializeDatabase() {
         raised_amount DECIMAL(10,2) DEFAULT 0,
         creator_name VARCHAR(255) NOT NULL,
         image VARCHAR(255) NOT NULL,
-        end_date TIMESTAMP NOT NULL, -- MODIFIED: Changed days_left to end_date
+        end_date TIMESTAMP NOT NULL,
         supporters INTEGER DEFAULT 0,
         location VARCHAR(255),
+        category VARCHAR(100), -- ADDED THIS LINE
         status VARCHAR(50) DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -256,23 +257,48 @@ app.post('/login', async (req, res) => {
 
 // --- CROWDFUNDING CAMPAIGN ROUTES ---
 
+// GET all APPROVED campaigns route, now with category filtering
 app.get('/api/campaigns', async (req, res) => {
+  const { category } = req.query; // Check for a category query parameter
+  let query = `
+    SELECT 
+      id, title, description, target_amount, raised_amount, 
+      creator_name, image, category,
+      GREATEST(0, FLOOR(DATE_PART('day', end_date - NOW()))) as days_left,
+      supporters, location, created_at,
+      ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
+    FROM campaigns 
+    WHERE status = 'approved'
+  `;
+  const queryParams = [];
+
+  if (category) {
+    query += ' AND category = $1';
+    queryParams.push(category);
+  }
+
+  query += ' ORDER BY created_at DESC';
+
   try {
-    const result = await pool.query(`
-      SELECT 
-        id, title, description, target_amount, raised_amount, 
-        creator_name, image, 
-        GREATEST(0, FLOOR(DATE_PART('day', end_date - NOW()))) as days_left,
-        supporters, location, created_at,
-        ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
-      FROM campaigns 
-      WHERE status = 'approved'
-      ORDER BY created_at DESC
-    `);
+    const result = await pool.query(query, queryParams);
     res.json({ success: true, campaigns: result.rows });
   } catch (err) {
     console.error('Get campaigns error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error fetching campaigns.' });
+  }
+});
+
+// **NEW ROUTE:** Get all unique categories
+app.get('/api/categories', async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT DISTINCT category FROM campaigns WHERE status = 'approved' AND category IS NOT NULL"
+    );
+    const categories = result.rows.map(row => row.category);
+    res.json({ success: true, categories });
+  } catch (err) {
+    console.error('Get categories error:', err.stack);
+    res.status(500).json({ success: false, message: 'Server error fetching categories.' });
   }
 });
 
@@ -282,7 +308,7 @@ app.get('/api/campaigns/:id', async (req, res) => {
     const result = await pool.query(`
       SELECT 
         id, title, description, target_amount, raised_amount, 
-        creator_name, image,
+        creator_name, image, category,
         GREATEST(0, FLOOR(DATE_PART('day', end_date - NOW()))) as days_left,
         supporters, location, created_at,
         ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
@@ -299,10 +325,11 @@ app.get('/api/campaigns/:id', async (req, res) => {
   }
 });
 
+// POST new campaign route
 app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   try {
     const {
-      title, description, target_amount, creator_name, days_left, location
+      title, description, target_amount, creator_name, days_left, location, category
     } = req.body;
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Image is required' });
@@ -312,10 +339,10 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
     endDate.setDate(endDate.getDate() + parseInt(days_left, 10));
 
     const result = await pool.query(`
-      INSERT INTO campaigns (title, description, target_amount, creator_name, image, end_date, location)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO campaigns (title, description, target_amount, creator_name, image, end_date, location, category)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id
-    `, [title, description, target_amount, creator_name, image, endDate, location]);
+    `, [title, description, target_amount, creator_name, image, endDate, location, category]);
     
     res.status(201).json({
       success: true,
