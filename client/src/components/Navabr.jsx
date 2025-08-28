@@ -8,13 +8,12 @@ function Navbar() {
   const navigate = useNavigate();
 
   // This effect checks for a logged-in user when the component loads
-  // and whenever the user navigates, ensuring the navbar is always up-to-date.
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
-  }, [navigate]); // Rerunning on navigation change helps keep it in sync
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -97,16 +96,10 @@ function Navbar() {
             ) : (
               <>
                 <Link
-                  to="/signup"
-                  className="border border-green-600 text-green-600 px-3 py-1 rounded-md text-sm hover:bg-green-600 hover:text-white transition"
-                >
-                  Sign Up
-                </Link>
-                <Link
-                  to="/start-campaign"
+                  to="/login"
                   className="bg-green-600 text-white px-3 py-1 rounded-md text-sm hover:bg-green-700 transition"
                 >
-                  Start Campaign
+                  Login
                 </Link>
               </>
             )}
@@ -144,16 +137,10 @@ function Navbar() {
               ) : (
                 <>
                   <Link
-                    to="/signup"
-                    className="border border-green-600 text-green-600 py-2 text-center rounded-md hover:bg-green-600 hover:text-white transition"
-                  >
-                    Sign Up
-                  </Link>
-                  <Link
-                    to="/start-campaign"
+                    to="/login"
                     className="bg-green-600 text-white py-2 text-center rounded-md hover:bg-green-700 transition"
                   >
-                    Start Campaign
+                    Login
                   </Link>
                 </>
               )}
