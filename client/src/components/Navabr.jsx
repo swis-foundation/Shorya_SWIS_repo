@@ -8,11 +8,25 @@ function Navbar() {
   const navigate = useNavigate();
 
   // This effect checks for a logged-in user when the component loads
+  // It also listens for changes to localStorage to update in real-time
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const checkUser = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        setUser(null);
+      }
+    };
+
+    checkUser(); // Check on initial load
+
+    // Listen for storage changes from other tabs
+    window.addEventListener('storage', checkUser);
+
+    return () => {
+      window.removeEventListener('storage', checkUser);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -87,19 +101,39 @@ function Navbar() {
           {/* Desktop Buttons */}
           <div className="hidden md:flex items-center gap-3">
             {user ? (
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600 transition"
-              >
-                Logout
-              </button>
+              <>
+                <Link
+                  to="/start-campaign"
+                  className="bg-green-600 text-white px-3 py-1 rounded-md text-sm hover:bg-green-700 transition"
+                >
+                  Start Campaign
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600 transition"
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <>
                 <Link
                   to="/login"
-                  className="bg-green-600 text-white px-3 py-1 rounded-md text-sm hover:bg-green-700 transition"
+                  className="border border-green-600 text-green-600 px-3 py-1 rounded-md text-sm hover:bg-green-600 hover:text-white transition"
                 >
                   Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="border border-green-600 text-green-600 px-3 py-1 rounded-md text-sm hover:bg-green-600 hover:text-white transition"
+                >
+                  Sign Up
+                </Link>
+                <Link
+                  to="/start-campaign"
+                  className="bg-green-600 text-white px-3 py-1 rounded-md text-sm hover:bg-green-700 transition"
+                >
+                  Start Campaign
                 </Link>
               </>
             )}
@@ -128,19 +162,39 @@ function Navbar() {
             <ul className="flex flex-col gap-1">{navItems}</ul>
             <div className="mt-3 flex flex-col gap-2">
               {user ? (
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-500 hover:bg-red-600 text-white py-2 text-center rounded-md transition"
-                >
-                  Logout
-                </button>
+                <>
+                  <Link
+                    to="/start-campaign"
+                    className="bg-green-600 text-white py-2 text-center rounded-md hover:bg-green-700 transition"
+                  >
+                    Start Campaign
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="bg-red-500 hover:bg-red-600 text-white py-2 text-center rounded-md transition"
+                  >
+                    Logout
+                  </button>
+                </>
               ) : (
                 <>
                   <Link
                     to="/login"
-                    className="bg-green-600 text-white py-2 text-center rounded-md hover:bg-green-700 transition"
+                    className="border border-green-600 text-green-600 py-2 text-center rounded-md hover:bg-green-600 hover:text-white transition"
                   >
                     Login
+                  </Link>
+                   <Link
+                    to="/signup"
+                    className="border border-green-600 text-green-600 py-2 text-center rounded-md hover:bg-green-600 hover:text-white transition"
+                  >
+                    Sign Up
+                  </Link>
+                  <Link
+                    to="/start-campaign"
+                    className="bg-green-600 text-white py-2 text-center rounded-md hover:bg-green-700 transition"
+                  >
+                    Start Campaign
                   </Link>
                 </>
               )}
@@ -153,3 +207,4 @@ function Navbar() {
 }
 
 export default Navbar;
+
