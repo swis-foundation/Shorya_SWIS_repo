@@ -28,8 +28,12 @@ const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
 
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
+const UPLOADS_DIR = process.env.NODE_ENV === 'production' 
+  ? '/opt/render/project/src/server/uploads' 
+  : path.join(__dirname, 'uploads');
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
 const pool = new Pool({
@@ -61,14 +65,14 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.static('public'));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+    cb(null, UPLOADS_DIR);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
@@ -113,8 +117,7 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    // ... (rest of the function remains the same)
-// ... existing code ...
+    
     await client.query(`
       CREATE TABLE IF NOT EXISTS donations (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -133,7 +136,7 @@ async function initializeDatabase() {
         full_name TEXT,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        user_type TEXT NOT NULL,
+        user_type TEXT NOT NULL DEFAULT 'user',
         account_type TEXT,
         mobile_number VARCHAR(15),
         ngo_id VARCHAR(100),
@@ -264,6 +267,16 @@ app.post('/login', async (req, res) => {
 });
 
 // --- CROWDFUNDING CAMPAIGN ROUTES ---
+
+// **NEW:** Endpoint for handling image uploads from the rich text editor
+app.post('/api/image-upload', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No image file provided.' });
+  }
+  const imageUrl = `/uploads/${req.file.filename}`;
+  res.json({ success: true, imageUrl: imageUrl });
+});
+
 
 // GET campaigns, with category filtering
 app.get('/api/campaigns', async (req, res) => {
@@ -514,3 +527,4 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
+
