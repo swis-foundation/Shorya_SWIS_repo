@@ -234,6 +234,7 @@ const StartCampaign = () => {
             <option value="">Select a category</option>
             <option value="Education">Education</option>
             <option value="Healthcare">Healthcare</option>
+          <option value="Education">Community Development</option>
             <option value="Environment">Environment</option>
             <option value="Animal Welfare">Animal Welfare</option>
             <option value="Disaster Relief">Disaster Relief</option>
