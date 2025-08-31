@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; // import styles for the editor
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 const StartCampaign = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [description, setDescription] = useState(""); // State for rich text editor
   const [formData, setFormData] = useState({
     // Step 1: Personal Details
     creator_name: "",
@@ -14,12 +17,11 @@ const StartCampaign = () => {
     creator_pan: "",
     // Step 2: Campaign Details
     title: "",
-    description: "",
     target_amount: "",
     category: "",
     days_left: "",
     location: "",
-    image: null,
+    image: null, // This is for the main cover image
     // Step 2: NGO Details (Optional)
     is_ngo: false,
     ngo_name: "",
@@ -28,6 +30,7 @@ const StartCampaign = () => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const quillRef = useRef(null); // Ref to access Quill editor instance
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
@@ -38,11 +41,59 @@ const StartCampaign = () => {
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
-    // Clear validation error on change
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
+  
+  // Custom image handler for ReactQuill
+  const imageHandler = () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      if (input.files) {
+        const file = input.files[0];
+        const uploadData = new FormData();
+        uploadData.append('image', file);
+
+        // Upload image to the dedicated server endpoint
+        const response = await fetch(`${backendUrl}/api/image-upload`, {
+          method: 'POST',
+          body: uploadData,
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          const quill = quillRef.current.getEditor();
+          const range = quill.getSelection(true);
+          // Insert the image with the URL returned from the server
+          quill.insertEmbed(range.index, 'image', data.imageUrl);
+        } else {
+          console.error('Image upload failed:', data.message);
+          alert('Image upload failed. Please try again.');
+        }
+      }
+    };
+  };
+  
+  // Memoize the modules configuration for ReactQuill
+  const modules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+        [{'list': 'ordered'}, {'list': 'bullet'}],
+        ['link', 'image'],
+        ['clean']
+      ],
+      handlers: {
+        image: imageHandler
+      }
+    }
+  }), []);
 
   const validateStep1 = () => {
     const newErrors = {};
@@ -52,20 +103,20 @@ const StartCampaign = () => {
     if (!formData.creator_phone.trim()) newErrors.creator_phone = "Phone number is required.";
     if (!formData.creator_pan.trim()) newErrors.creator_pan = "PAN number is required.";
     else if (!panRegex.test(formData.creator_pan.toUpperCase())) newErrors.creator_pan = "Invalid PAN number format.";
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
+  
   const validateStep2 = () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = "Campaign title is required.";
-    if (!formData.description.trim()) newErrors.description = "Description is required.";
+    // Validate that the rich text description isn't empty
+    if (!description || description.replace(/<(.|\n)*?>/g, '').trim().length === 0) newErrors.description = "Description is required.";
     if (!formData.target_amount) newErrors.target_amount = "Goal amount is required.";
     if (!formData.category) newErrors.category = "Category is required.";
     if (!formData.days_left) newErrors.days_left = "Duration is required.";
     if (!formData.location.trim()) newErrors.location = "Location is required.";
-    if (!formData.image) newErrors.image = "Campaign image is required.";
+    if (!formData.image) newErrors.image = "Campaign cover image is required.";
     if (formData.is_ngo) {
       if (!formData.ngo_name.trim()) newErrors.ngo_name = "NGO name is required.";
       if (!formData.ngo_address.trim()) newErrors.ngo_address = "NGO address is required.";
@@ -73,13 +124,13 @@ const StartCampaign = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
+  
   const nextStep = () => {
     if (validateStep1()) {
       setStep(2);
     }
   };
-
+  
   const prevStep = () => {
     setStep(1);
   };
@@ -92,9 +143,12 @@ const StartCampaign = () => {
     setLoading(true);
 
     const submissionData = new FormData();
+    // Append all form data fields
     Object.keys(formData).forEach(key => {
         submissionData.append(key, formData[key]);
     });
+    // Append rich text description
+    submissionData.append('description', description);
     
     try {
         const response = await fetch(`${backendUrl}/api/campaigns`, {
@@ -152,7 +206,14 @@ const StartCampaign = () => {
       </div>
       <div>
         <label className="block text-gray-700 font-medium mb-1">Description</label>
-        <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Tell a compelling story" className={`w-full input ${errors.description && 'border-red-500'}`} rows="4"></textarea>
+        <ReactQuill 
+            ref={quillRef}
+            theme="snow" 
+            value={description} 
+            onChange={setDescription}
+            modules={modules}
+            className={`${errors.description && 'border border-red-500 rounded-lg'}`}
+        />
         {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,7 +247,7 @@ const StartCampaign = () => {
         {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
       </div>
       <div>
-        <label className="block text-gray-700 font-medium mb-1">Campaign Image</label>
+        <label className="block text-gray-700 font-medium mb-1">Campaign Cover Image</label>
         <input type="file" name="image" onChange={handleChange} accept="image/*" className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-lime-50 file:text-lime-700 hover:file:bg-lime-100 ${errors.image && 'border-red-500'}`} />
         {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
       </div>
