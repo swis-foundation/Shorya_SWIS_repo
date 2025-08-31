@@ -11,9 +11,10 @@ function Navbar() {
     const handleScroll = () => setSticky(window.scrollY > 0);
     window.addEventListener("scroll", handleScroll);
     
-    // This function checks localStorage and updates the component's state
+    // This function now checks sessionStorage
     const checkUser = () => {
-      const loggedInUser = localStorage.getItem("user");
+      // **MODIFIED:** Read from sessionStorage instead of localStorage.
+      const loggedInUser = sessionStorage.getItem("user");
       if (loggedInUser) {
         setUser(JSON.parse(loggedInUser));
       } else {
@@ -21,11 +22,11 @@ function Navbar() {
       }
     };
 
-    checkUser(); // Check on initial load
+    checkUser();
 
-    // **FIX:** Listen for our custom event to handle login/logout in the same tab
+    // These listeners ensure the navbar updates if login/logout happens
+    // in the same tab or another tab.
     window.addEventListener('storageChange', checkUser);
-    // Listen for the standard storage event for changes in other tabs
     window.addEventListener('storage', checkUser);
 
     // Cleanup the listeners when the component is unmounted
@@ -37,8 +38,9 @@ function Navbar() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    // **FIX:** Dispatch the custom event to notify other components of the change
+    // **MODIFIED:** Remove the item from sessionStorage.
+    sessionStorage.removeItem("user");
+    // Notify other components (like this one) that storage has changed
     window.dispatchEvent(new Event("storageChange"));
     navigate("/");
   };
