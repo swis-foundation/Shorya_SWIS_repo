@@ -1,18 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import RealTimeProgressBar from "./RealTimeProgressBar";
+import DOMPurify from 'dompurify'; // Import DOMPurify for security
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-
-// Helper function to create a short description from the full text
-const getShortDescription = (description) => {
-  if (!description) {
-    return "";
-  }
-  // Split by sentences, take the first two, and join them back.
-  const sentences = description.match(/[^.!?]+[.!?]+/g) || [];
-  return sentences.slice(0, 2).join(" ");
-};
 
 const SectionCard = ({ title, children }) => (
   <div className="bg-white p-6 md:p-8 rounded-xl shadow-xl">
@@ -46,6 +37,7 @@ const CommunityFooter = () => (
   </div>
 );
 
+
 const CampaignPage = () => {
   const { id } = useParams();
   const [campaign, setCampaign] = useState(null);
@@ -70,6 +62,24 @@ const CampaignPage = () => {
     };
     fetchCampaign();
   }, [id]);
+  
+  // Helper to create sanitized HTML for rendering
+  const createMarkup = (htmlContent) => {
+    // Sanitize the HTML content to prevent XSS attacks before rendering
+    return { __html: DOMPurify.sanitize(htmlContent) };
+  };
+  
+  // Helper to create a plain text short description from HTML
+  const getShortDescription = (htmlContent) => {
+      if (!htmlContent) return "";
+      // Create a temporary div to parse the HTML and get its text content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      const text = tempDiv.textContent || tempDiv.innerText || "";
+      // Take the first 150 characters for a concise summary
+      return text.substring(0, 150) + (text.length > 150 ? "..." : "");
+  };
+
 
   if (loading) {
     return (
@@ -87,9 +97,6 @@ const CampaignPage = () => {
     );
   }
 
-  // Generate the short description once the campaign data is loaded
-  const shortDescription = getShortDescription(campaign.description);
-
   return (
     <div className="bg-[#f9f8f3] min-h-screen font-sans">
       {/* Header */}
@@ -97,9 +104,8 @@ const CampaignPage = () => {
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 leading-snug">
           {campaign.title}
         </h1>
-        {/* MODIFIED: Display the short description here */}
         <p className="text-lg md:text-xl text-gray-600 mt-4 max-w-3xl">
-          {shortDescription}
+          {getShortDescription(campaign.description)}
         </p>
       </div>
 
@@ -107,11 +113,11 @@ const CampaignPage = () => {
       <div className="py-10 px-4 sm:px-10 lg:px-24 max-w-7xl mx-auto grid lg:grid-cols-3 gap-10">
         {/* Left Side */}
         <div className="lg:col-span-2 space-y-10">
-          {/* Image */}
+          {/* Cover Image */}
           <div className="rounded-2xl overflow-hidden shadow-xl">
             <img
               src={`${backendUrl}/uploads/${campaign.image}`}
-              alt="Campaign"
+              alt="Campaign Cover"
               className="w-full h-[300px] md:h-[400px] object-cover"
             />
           </div>
@@ -147,15 +153,18 @@ const CampaignPage = () => {
           {activeTab === "details" && (
             <>
               <SectionCard title="About the Campaign">
-                {/* Display the FULL description here */}
-                <p className="whitespace-pre-wrap">{campaign.description}</p>
+                {/* **MODIFIED:** Render the sanitized HTML description */}
+                <div 
+                    className="prose max-w-none" 
+                    dangerouslySetInnerHTML={createMarkup(campaign.description)} 
+                />
               </SectionCard>
               <div className="bg-green-50 border border-green-300 text-green-800 text-base p-4 rounded-xl shadow-md">
                 ✅ This campaign is eligible for 80G Tax Exemption.
               </div>
               <SectionCard title="Campaign Information">
                 <Detail label="Location" value={campaign.location || 'Not specified'} />
-                <Detail label="End Date" value={`${campaign.days_left} days remaining`} />
+                <Detail label="End Date" value={new Date(campaign.end_date).toLocaleDateString()} />
                 <p className="text-red-500 font-semibold mt-2">
                   🕒 {campaign.days_left} Days Left
                 </p>
@@ -170,41 +179,35 @@ const CampaignPage = () => {
           )}
         </div>
 
-        {/* Right Sidebar - Big Donate Box */}
+        {/* Right Sidebar */}
         <div className="sticky top-24">
           <div className="bg-white p-10 md:p-12 rounded-3xl shadow-2xl space-y-8 border-2 border-lime-200 w-full max-w-lg mx-auto">
             <h3 className="text-lg text-gray-600 mb-2">
               <span className="text-3xl font-extrabold text-gray-800">
-                ₹{campaign.raised_amount.toLocaleString()}
+                ₹{Number(campaign.raised_amount).toLocaleString()}
               </span>{" "}
-              raised of ₹{campaign.target_amount.toLocaleString()} Goal
+              raised of ₹{Number(campaign.target_amount).toLocaleString()} Goal
             </h3>
-
             <RealTimeProgressBar
               campaignId={campaign.id}
               initialRaised={campaign.raised_amount}
               initialGoal={campaign.target_amount}
             />
-
             <p className="text-lg text-gray-600">
               <span className="font-bold">{campaign.supporters}</span> Donors
             </p>
-
             <Link to={`/campaigns/${campaign.id}/donate`}>
               <button className="w-full bg-lime-600 hover:bg-lime-700 text-white text-xl font-bold py-4 rounded-2xl transition duration-300 shadow-lg">
                 DONATE NOW
               </button>
             </Link>
-
             <div className="text-sm text-gray-500 space-y-1 pt-2 text-center">
               <p>📌 {campaign.supporters} people have donated</p>
-              <p>📚 Category: Education</p>
+              <p>📚 Category: {campaign.category}</p>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Footer CTA */}
       <CommunityFooter />
     </div>
   );
@@ -243,11 +246,13 @@ const DonorsList = ({ campaignId }) => {
     <ul className="space-y-4 text-gray-700 text-base">
       {donations.map((d, index) => (
         <li key={index}>
-          🧑‍💼 {d.donor_name} – ₹{d.amount.toLocaleString()}
+          🧑‍💼 {d.donor_name} – ₹{Number(d.amount).toLocaleString()}
         </li>
       ))}
     </ul>
   );
 };
 
+
 export default CampaignPage;
+
