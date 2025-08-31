@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { io } from "socket.io-client";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
@@ -13,19 +12,30 @@ const Paynow = () => {
     email: "",
     amount: "",
   });
+  const [amountError, setAmountError] = useState("");
 
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
+    if (e.target.name === "amount") {
+      setAmountError("");
+    }
   };
 
   const handlePayment = async () => {
     const { name, phone, email, amount } = formData;
-    if (name && phone && email && amount > 0) {
+
+    // **MODIFIED:** Added validation for minimum donation amount
+    if (parseFloat(amount) < 50) {
+      setAmountError("Minimum donation amount is ₹50.");
+      return; // Stop the payment process
+    }
+
+    if (name && phone && email && amount >= 50) {
+      setAmountError(""); // Clear any previous errors
       try {
-        // 1. Call backend to create a Razorpay order
         const orderResponse = await fetch(
           `${backendUrl}/api/payments/create-order`,
           {
@@ -54,7 +64,6 @@ const Paynow = () => {
           currency: orderData.currency,
           order_id: orderData.orderId,
           handler: async function (response) {
-            // 2. On successful payment, verify it with the backend
             const verifyResponse = await fetch(
               `${backendUrl}/api/payments/verify-payment`,
               {
@@ -64,7 +73,7 @@ const Paynow = () => {
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
-                  amount: amount, // Re-verify amount on the backend
+                  amount: amount,
                 }),
               }
             );
@@ -73,7 +82,7 @@ const Paynow = () => {
 
             if (verifyData.success) {
               alert("Payment successful!");
-              navigate(`/campaigns/${id}`); // Redirect back to campaign page
+              navigate(`/campaigns/${id}`);
             } else {
               alert("Payment verification failed. Please contact support.");
             }
@@ -99,7 +108,7 @@ const Paynow = () => {
         alert("An error occurred. Please try again.");
       }
     } else {
-      alert("Please fill in all required fields and enter a valid amount.");
+      alert("Please fill in all required fields.");
     }
   };
 
@@ -146,6 +155,9 @@ const Paynow = () => {
           onChange={handleChange}
           className="w-full py-3 px-6 mb-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-lime-600"
         />
+        
+        {/* **MODIFIED:** Display the error message if the amount is invalid */}
+        {amountError && <p className="text-red-500 text-sm text-center -mt-2 mb-2">{amountError}</p>}
 
         <button
           onClick={handlePayment}
