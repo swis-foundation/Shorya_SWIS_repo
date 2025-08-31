@@ -28,8 +28,12 @@ const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
 
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
+const UPLOADS_DIR = process.env.NODE_ENV === 'production' 
+  ? '/opt/render/project/src/server/uploads' 
+  : path.join(__dirname, 'uploads');
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
 const pool = new Pool({
@@ -61,14 +65,14 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(express.static('public'));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+    cb(null, UPLOADS_DIR);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
@@ -98,6 +102,12 @@ async function initializeDatabase() {
         target_amount DECIMAL(10,2) NOT NULL,
         raised_amount DECIMAL(10,2) DEFAULT 0,
         creator_name VARCHAR(255) NOT NULL,
+        creator_email VARCHAR(255),
+        creator_phone VARCHAR(15),
+        creator_pan VARCHAR(10),
+        ngo_name VARCHAR(255),
+        ngo_address TEXT,
+        ngo_website VARCHAR(255),
         image VARCHAR(255) NOT NULL,
         end_date TIMESTAMP NOT NULL,
         supporters INTEGER DEFAULT 0,
@@ -107,6 +117,7 @@ async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    
     await client.query(`
       CREATE TABLE IF NOT EXISTS donations (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -125,7 +136,7 @@ async function initializeDatabase() {
         full_name TEXT,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        user_type TEXT NOT NULL,
+        user_type TEXT NOT NULL DEFAULT 'user',
         account_type TEXT,
         mobile_number VARCHAR(15),
         ngo_id VARCHAR(100),
@@ -257,6 +268,17 @@ app.post('/login', async (req, res) => {
 
 // --- CROWDFUNDING CAMPAIGN ROUTES ---
 
+// **NEW:** Endpoint for handling image uploads from the rich text editor
+app.post('/api/image-upload', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No image file provided.' });
+  }
+  const imageUrl = `/uploads/${req.file.filename}`;
+  res.json({ success: true, imageUrl: imageUrl });
+});
+
+
+// GET campaigns, with category filtering
 app.get('/api/campaigns', async (req, res) => {
   const { category } = req.query;
   let query = `
@@ -287,26 +309,28 @@ app.get('/api/campaigns', async (req, res) => {
   }
 });
 
-// **MODIFIED:** This route now calculates the total goal and raised amounts for each category.
+// GET categories with aggregated progress
 app.get('/api/categories', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT 
-        category, 
-        SUM(target_amount) as total_goal, 
-        SUM(raised_amount) as total_raised
-      FROM campaigns 
-      WHERE status = 'approved' AND category IS NOT NULL 
-      GROUP BY category
-      ORDER BY category
-    `);
-    res.json({ success: true, categories: result.rows });
-  } catch (err) {
-    console.error('Get categories error:', err.stack);
-    res.status(500).json({ success: false, message: 'Server error fetching categories.' });
-  }
-});
+    try {
+      const result = await pool.query(`
+        SELECT
+          category,
+          COUNT(*) as campaign_count,
+          SUM(target_amount) as total_goal,
+          SUM(raised_amount) as total_raised
+        FROM campaigns
+        WHERE status = 'approved' AND category IS NOT NULL
+        GROUP BY category
+        ORDER BY category
+      `);
+      res.json({ success: true, categories: result.rows });
+    } catch (err) {
+      console.error('Get categories error:', err.stack);
+      res.status(500).json({ success: false, message: 'Server error fetching categories.' });
+    }
+  });
 
+// GET single campaign
 app.get('/api/campaigns/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -330,27 +354,44 @@ app.get('/api/campaigns/:id', async (req, res) => {
   }
 });
 
+// POST new campaign
 app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   try {
     const {
-      title, description, target_amount, creator_name, days_left, location, category
+      creator_name, creator_email, creator_phone, creator_pan,
+      title, description, target_amount, category,
+      days_left, location, is_ngo, ngo_name, ngo_address, ngo_website
     } = req.body;
+
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Image is required' });
     }
     const image = req.file.filename;
+
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + parseInt(days_left, 10));
 
     const result = await pool.query(`
-      INSERT INTO campaigns (title, description, target_amount, creator_name, image, end_date, location, category)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO campaigns (
+        creator_name, creator_email, creator_phone, creator_pan,
+        title, description, target_amount, category,
+        end_date, location, image,
+        ngo_name, ngo_address, ngo_website
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id
-    `, [title, description, target_amount, creator_name, image, endDate, location, category]);
+    `, [
+      creator_name, creator_email, creator_phone, creator_pan,
+      title, description, target_amount, category,
+      endDate, location, image,
+      is_ngo === 'true' ? ngo_name : null,
+      is_ngo === 'true' ? ngo_address : null,
+      is_ngo === 'true' ? ngo_website : null
+    ]);
     
     res.status(201).json({
       success: true,
-      message: 'Campaign created successfully and is pending approval.',
+      message: 'Campaign submitted for approval! You will be notified once it is reviewed.',
       campaign_id: result.rows[0].id
     });
   } catch (err) {
@@ -363,7 +404,12 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
 
 app.get('/api/admin/campaigns/pending', async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM campaigns WHERE status = 'pending' ORDER BY created_at ASC");
+    const result = await pool.query(`
+        SELECT *, GREATEST(0, FLOOR(DATE_PART('day', end_date - NOW()))) as days_left 
+        FROM campaigns 
+        WHERE status = 'pending' 
+        ORDER BY created_at ASC
+    `);
     res.json({ success: true, campaigns: result.rows });
   } catch (err) {
     console.error('Error fetching pending campaigns:', err.stack);
@@ -429,8 +475,8 @@ app.post('/api/payments/verify-payment', async (req, res) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-                                    .update(body.toString())
-                                    .digest('hex');
+                                      .update(body.toString())
+                                      .digest('hex');
     if (expectedSignature === razorpay_signature) {
         const client = await pool.connect();
         try {
@@ -481,3 +527,4 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
+
