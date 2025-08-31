@@ -46,8 +46,7 @@ const Login = () => {
       if (data.success) {
         alert("Login successful!");
         // Save user info to localStorage so the navbar can see it
-        localStorage.setItem('user', JSON.stringify(data.user));
-
+        sessionStorage.setItem('user', JSON.stringify(data.user));
         // Navigate to the homepage
         navigate("/");
         // **FIX:** Force a page reload to update the navbar's state
