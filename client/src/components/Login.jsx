@@ -48,9 +48,11 @@ const Login = () => {
         // Save user info to localStorage so the navbar can see it
         localStorage.setItem('user', JSON.stringify(data.user));
 
-        // **FIX:** Always redirect to the homepage after login.
-        // The navbar will handle showing the correct links.
+        // Navigate to the homepage
         navigate("/");
+        // **FIX:** Force a page reload to update the navbar's state
+        window.location.reload();
+        
       } else {
         setError(data.message || "Login failed. Please check your credentials.");
       }
@@ -139,3 +141,4 @@ const Login = () => {
 };
 
 export default Login;
+
