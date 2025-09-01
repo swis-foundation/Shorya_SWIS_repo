@@ -123,7 +123,7 @@ async function initializeDatabase() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         campaign_id UUID REFERENCES campaigns(id) ON DELETE CASCADE,
         donor_name VARCHAR(255) NOT NULL,
-        donor_pan VARCHAR(10), -- MODIFIED: Added column for donor's PAN
+        donor_pan VARCHAR(10),
         amount DECIMAL(10,2) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         razorpay_order_id VARCHAR(255) UNIQUE,
@@ -277,9 +277,9 @@ app.post('/api/image-upload', upload.single('image'), (req, res) => {
   res.json({ success: true, imageUrl: imageUrl });
 });
 
-
 app.get('/api/campaigns', async (req, res) => {
   const { category } = req.query;
+  // **MODIFIED:** Added a check to only get campaigns that have not expired
   let query = `
     SELECT 
       id, title, description, target_amount, raised_amount, 
@@ -288,7 +288,7 @@ app.get('/api/campaigns', async (req, res) => {
       supporters, location, created_at,
       ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
     FROM campaigns 
-    WHERE status = 'approved'
+    WHERE status = 'approved' AND end_date >= NOW() 
   `;
   const queryParams = [];
 
@@ -310,6 +310,7 @@ app.get('/api/campaigns', async (req, res) => {
 
 app.get('/api/categories', async (req, res) => {
     try {
+      // **MODIFIED:** This query now also only considers active (non-expired) campaigns
       const result = await pool.query(`
         SELECT
           category,
@@ -317,7 +318,7 @@ app.get('/api/categories', async (req, res) => {
           SUM(target_amount) as total_goal,
           SUM(raised_amount) as total_raised
         FROM campaigns
-        WHERE status = 'approved' AND category IS NOT NULL
+        WHERE status = 'approved' AND category IS NOT NULL AND end_date >= NOW()
         GROUP BY category
         ORDER BY category
       `);
@@ -377,7 +378,7 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id
     `, [
-      creator_name, creator_email, creator_phone, creator_pan,
+      creator_name, creator_email, creator_phone, creator_pan || null,
       title, description, target_amount, category,
       endDate, location, image,
       is_ngo === 'true' ? ngo_name : null,
@@ -438,23 +439,22 @@ app.put('/api/admin/campaigns/:id/status', async (req, res) => {
 
 app.post('/api/payments/create-order', async (req, res) => {
     try {
-        const { amount, campaignId, donorName, donorPan } = req.body; // MODIFIED: Added donorPan
-        if (!amount || !campaignId || !donorName) { // PAN is optional so not validated here
-            return res.status(400).json({ success: false, message: 'Amount, campaignId, and donorName are required' });
+        const { amount, campaignId, donorName, donorPan } = req.body;
+        if (!amount || !campaignId || !donorName || !donorPan) {
+            return res.status(400).json({ success: false, message: 'All fields are required' });
         }
         const receiptId = `receipt_${uuidv4().substring(0, 20)}`;
         const options = {
             amount: amount * 100,
             currency: 'INR',
             receipt: receiptId,
-            notes: { campaignId, donorName, donorPan } // MODIFIED: Added donorPan to notes
+            notes: { campaignId, donorName, donorPan }
         };
         const order = await razorpay.orders.create(options);
         
-        // MODIFIED: Save donor's PAN to the database
         await pool.query(
             'INSERT INTO donations (campaign_id, donor_name, donor_pan, amount, razorpay_order_id, status) VALUES ($1, $2, $3, $4, $5, $6)',
-            [campaignId, donorName, donorPan || null, amount, order.id, 'pending']
+            [campaignId, donorName, donorPan, amount, order.id, 'pending']
         );
         res.json({
             success: true,
