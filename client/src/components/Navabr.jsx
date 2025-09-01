@@ -11,9 +11,7 @@ function Navbar() {
     const handleScroll = () => setSticky(window.scrollY > 0);
     window.addEventListener("scroll", handleScroll);
     
-    // This function now checks sessionStorage
     const checkUser = () => {
-      // **MODIFIED:** Read from sessionStorage instead of localStorage.
       const loggedInUser = sessionStorage.getItem("user");
       if (loggedInUser) {
         setUser(JSON.parse(loggedInUser));
@@ -24,12 +22,9 @@ function Navbar() {
 
     checkUser();
 
-    // These listeners ensure the navbar updates if login/logout happens
-    // in the same tab or another tab.
     window.addEventListener('storageChange', checkUser);
     window.addEventListener('storage', checkUser);
 
-    // Cleanup the listeners when the component is unmounted
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener('storageChange', checkUser);
@@ -38,9 +33,7 @@ function Navbar() {
   }, []);
 
   const handleLogout = () => {
-    // **MODIFIED:** Remove the item from sessionStorage.
     sessionStorage.removeItem("user");
-    // Notify other components (like this one) that storage has changed
     window.dispatchEvent(new Event("storageChange"));
     navigate("/");
   };
@@ -60,7 +53,9 @@ function Navbar() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        sticky ? "bg-white dark:bg-slate-800 shadow-md" : "bg-transparent"
+        sticky 
+          ? "bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm shadow-md" 
+          : "bg-slate-100 dark:bg-gray-800"
       }`}
     >
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 md:px-8">
@@ -74,7 +69,8 @@ function Navbar() {
           </Link>
 
           <nav className="hidden md:flex flex-1 justify-center">
-            <ul className="flex gap-4 md:gap-6 text-sm md:text-base font-medium text-gray-800 dark:text-white">
+            {/* MODIFIED: Changed text color for better contrast */}
+            <ul className="flex gap-4 md:gap-6 text-sm md:text-base font-medium text-slate-700 dark:text-slate-300">
               {navItems}
             </ul>
           </nav>
