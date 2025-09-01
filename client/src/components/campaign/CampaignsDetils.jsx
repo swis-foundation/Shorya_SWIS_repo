@@ -1,43 +1,35 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
 import { FaArrowLeft } from "react-icons/fa";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
-const CategoryCard = ({ categoryData, onClick }) => {
-  const { category, total_goal, total_raised } = categoryData;
-  // Calculate the percentage, which can go above 100
-  const percentage = total_goal > 0 ? (total_raised / total_goal) * 100 : 0;
-  const progressStyle = {
-    // The visual bar is capped at 100% width
-    width: `${Math.min(percentage, 100)}%`
-  };
+const CategoryCard = ({ category, onClick }) => {
+    const progressPercentage = (category.total_raised / category.total_goal) * 100;
+    const progressStyle = {
+      width: `${Math.min(progressPercentage, 100)}%`
+    };
 
-  return (
-    <div 
-      onClick={() => onClick(category)}
-      className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 cursor-pointer flex flex-col justify-between"
-    >
-      <div>
-        <h3 className="text-lg font-semibold text-lime-600 mb-3">{category}</h3>
-      </div>
-      <div>
-        <div className="flex justify-between items-center mb-1">
-          <p className="text-sm text-gray-600">
-            <strong>₹{Number(total_raised).toLocaleString()}</strong> raised
-          </p>
-          {/* Display the percentage, rounded to the nearest whole number */}
-          <p className="text-sm font-bold text-lime-600">{Math.round(percentage)}%</p>
+    return (
+        <div
+            onClick={() => onClick(category.category)}
+            className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 cursor-pointer flex flex-col justify-between"
+        >
+            <div>
+                <h3 className="text-lg font-semibold text-lime-600 mb-2">{category.category}</h3>
+                <p className="text-xs text-gray-500 mb-4">{category.campaign_count} active campaigns</p>
+            </div>
+            <div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                    <div className="bg-lime-500 h-2.5 rounded-full" style={progressStyle}></div>
+                </div>
+                <div className="text-sm text-gray-700">
+                    <span className="font-bold">₹{Number(category.total_raised).toLocaleString()}</span> raised of ₹{Number(category.total_goal).toLocaleString()}
+                    <span className="text-lime-600 font-semibold ml-2">({Math.floor(progressPercentage)}%)</span>
+                </div>
+            </div>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-          <div className="bg-lime-500 h-2.5 rounded-full" style={progressStyle}></div>
-        </div>
-        <p className="text-xs text-gray-500 text-right">
-          Goal: ₹{Number(total_goal).toLocaleString()}
-        </p>
-      </div>
-    </div>
-  );
+    )
 };
 
 const CampaignCard = ({ campaign }) => {
@@ -85,27 +77,38 @@ const CampaignsDetails = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const location = useLocation(); // Get location object from router
 
-  // Fetch categories on component mount
+  // **MODIFIED:** Check for a category passed from another page (like the homepage)
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${backendUrl}/api/categories`);
-        const data = await response.json();
-        if (data.success) {
-          setCategories(data.categories);
-        } else {
-          setError('Failed to load categories.');
-        }
-      } catch (err) {
-        setError('An error occurred while fetching categories.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCategories();
-  }, []);
+    if (location.state?.category) {
+      setSelectedCategory(location.state.category);
+    }
+  }, [location.state]);
+
+
+  // Fetch categories on component mount if no category is pre-selected
+  useEffect(() => {
+    if (!selectedCategory) {
+        const fetchCategories = async () => {
+            try {
+              setLoading(true);
+              const response = await fetch(`${backendUrl}/api/categories`);
+              const data = await response.json();
+              if (data.success) {
+                setCategories(data.categories);
+              } else {
+                setError('Failed to load categories.');
+              }
+            } catch (err) {
+              setError('An error occurred while fetching categories.');
+            } finally {
+              setLoading(false);
+            }
+          };
+          fetchCategories();
+    }
+  }, [selectedCategory]); // Re-fetch categories if we go back
 
   // Fetch campaigns when a category is selected
   useEffect(() => {
@@ -116,6 +119,7 @@ const CampaignsDetails = () => {
     const fetchCampaigns = async () => {
       try {
         setLoading(true);
+        setError(''); // Clear previous errors
         const response = await fetch(`${backendUrl}/api/campaigns?category=${encodeURIComponent(selectedCategory)}`);
         const data = await response.json();
         if (data.success) {
@@ -143,7 +147,11 @@ const CampaignsDetails = () => {
 
       {selectedCategory && (
         <button 
-          onClick={() => setSelectedCategory(null)}
+          onClick={() => {
+            setSelectedCategory(null);
+            // Clear category from navigation state to prevent re-triggering
+            window.history.replaceState({}, document.title)
+          }}
           className="flex items-center gap-2 mb-8 text-lime-600 hover:underline"
         >
           <FaArrowLeft /> Back to Categories
@@ -154,15 +162,26 @@ const CampaignsDetails = () => {
       {error && <p className="text-center text-red-500">{error}</p>}
 
       {!loading && !error && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {!selectedCategory 
-            ? categories.map(catData => <CategoryCard key={catData.category} categoryData={catData} onClick={setSelectedCategory} />)
-            : campaigns.map(camp => <CampaignCard key={camp.id} campaign={camp} />)
-          }
-        </div>
+        <>
+          {/* **MODIFIED:** Logic to handle empty campaigns in a selected category */}
+          {selectedCategory && campaigns.length === 0 && (
+            <div className="text-center text-gray-500 bg-white p-8 rounded-lg shadow-md">
+              <h3 className="text-xl font-semibold mb-2">No Active Campaigns</h3>
+              <p>All campaigns under the "{selectedCategory}" category have been completed or there are no campaigns in this category yet. Thank you for your support!</p>
+            </div>
+          )}
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {!selectedCategory 
+              ? categories.map(cat => <CategoryCard key={cat.category} category={cat} onClick={setSelectedCategory} />)
+              : campaigns.map(camp => <CampaignCard key={camp.id} campaign={camp} />)
+            }
+          </div>
+        </>
       )}
     </div>
   );
 };
 
 export default CampaignsDetails;
+
