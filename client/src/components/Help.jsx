@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import { FaHeart, FaUsers, FaChartLine } from "react-icons/fa";
+import { Link } from "react-router-dom"; // Import Link
 
 const helpOptions = [
   {
@@ -34,7 +35,7 @@ const helpOptions = [
       "https://images.unsplash.com/photo-1496180727794-817822f65950?auto=format&fit=crop&w=800&q=80",
   },
   {
-    title: "Child Protection",
+    title: "Healthcare",
     description: "Ensuring safety and rights of children worldwide",
     image:
       "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=800&q=80",
@@ -83,7 +84,6 @@ const Help = () => {
         </p>
 
         <div className="flex items-center justify-center space-x-4">
-          {/* Left Arrow */}
           <button
             onClick={scrollLeft}
             aria-label="Scroll left"
@@ -92,14 +92,16 @@ const Help = () => {
             <span className="text-xl">←</span>
           </button>
 
-          {/* Cards container */}
           <div
             ref={containerRef}
             className="flex space-x-6 overflow-x-auto overflow-y-hidden scrollbar-hide w-full max-w-[1000px] px-2"
             style={{ scrollBehavior: "smooth" }}
           >
             {helpOptions.map((option, index) => (
-              <div
+              // **MODIFIED:** Wrapped the card in a Link component
+              <Link
+                to="/campaigns"
+                state={{ category: option.title }} // Pass the category name in the state
                 key={index}
                 className="group relative flex-shrink-0 w-56 sm:w-64 bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transform hover:scale-105 transition duration-300"
               >
@@ -110,14 +112,6 @@ const Help = () => {
                     className="h-full w-full object-cover"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-xl">
-                    <button
-                      className="bg-green-600 text-sm text-white px-1 py-1 rounded-sm hover:bg-green-900"
-                      aria-label={`Donate to ${option.title}`}
-                    >
-                      Donate Now
-                    </button>
-                  </div>
                 </div>
                 <div className="p-4 text-left">
                   <h3 className="text-green-600 font-semibold text-lg mb-2">
@@ -125,11 +119,10 @@ const Help = () => {
                   </h3>
                   <p className="text-gray-600 text-sm">{option.description}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 
-          {/* Right Arrow */}
           <button
             onClick={scrollRight}
             aria-label="Scroll right"
@@ -139,15 +132,15 @@ const Help = () => {
           </button>
         </div>
 
-        {/* Explore More Button */}
         <div className="mt-10">
-          <button className="px-6 py-3 text-green-600 border border-green-600 rounded-xl hover:bg-green-50 transition">
-            Explore More
-          </button>
+            <Link to="/campaigns">
+                <button className="px-6 py-3 text-green-600 border border-green-600 rounded-xl hover:bg-green-50 transition">
+                    Explore More
+                </button>
+            </Link>
         </div>
       </section>
 
-      {/* Impact Section full width, no horizontal padding */}
       <section className="bg-green-500 mt-4 py-12 rounded-xl text-white">
         <h3 className="text-2xl sm:text-3xl font-semibold mb-10 text-center">
           Our Impact Together
