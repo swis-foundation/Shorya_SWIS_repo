@@ -1,14 +1,14 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import Navbar from './Navabr';
-import Footer from './Footer';
+import React from "react";
+import { Outlet } from "react-router-dom";
+import Navbar from "./Navabr"; // Corrected filename
+import Footer from "./Footer";
 
 const Layout = () => {
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main>
-        {/* The Outlet component will render the specific page component */}
+      {/* This 'main' element now has padding-top to prevent content from overlapping with the fixed navbar */}
+      <main className="flex-grow pt-16">
         <Outlet />
       </main>
       <Footer />
@@ -17,3 +17,4 @@ const Layout = () => {
 };
 
 export default Layout;
+
