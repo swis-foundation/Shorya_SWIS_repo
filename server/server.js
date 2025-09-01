@@ -123,6 +123,7 @@ async function initializeDatabase() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         campaign_id UUID REFERENCES campaigns(id) ON DELETE CASCADE,
         donor_name VARCHAR(255) NOT NULL,
+        donor_pan VARCHAR(10), -- MODIFIED: Added column for donor's PAN
         amount DECIMAL(10,2) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         razorpay_order_id VARCHAR(255) UNIQUE,
@@ -268,7 +269,6 @@ app.post('/login', async (req, res) => {
 
 // --- CROWDFUNDING CAMPAIGN ROUTES ---
 
-// **NEW:** Endpoint for handling image uploads from the rich text editor
 app.post('/api/image-upload', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No image file provided.' });
@@ -278,7 +278,6 @@ app.post('/api/image-upload', upload.single('image'), (req, res) => {
 });
 
 
-// GET campaigns, with category filtering
 app.get('/api/campaigns', async (req, res) => {
   const { category } = req.query;
   let query = `
@@ -309,7 +308,6 @@ app.get('/api/campaigns', async (req, res) => {
   }
 });
 
-// GET categories with aggregated progress
 app.get('/api/categories', async (req, res) => {
     try {
       const result = await pool.query(`
@@ -330,7 +328,6 @@ app.get('/api/categories', async (req, res) => {
     }
   });
 
-// GET single campaign
 app.get('/api/campaigns/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -354,7 +351,6 @@ app.get('/api/campaigns/:id', async (req, res) => {
   }
 });
 
-// POST new campaign
 app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   try {
     const {
@@ -442,8 +438,8 @@ app.put('/api/admin/campaigns/:id/status', async (req, res) => {
 
 app.post('/api/payments/create-order', async (req, res) => {
     try {
-        const { amount, campaignId, donorName } = req.body;
-        if (!amount || !campaignId || !donorName) {
+        const { amount, campaignId, donorName, donorPan } = req.body; // MODIFIED: Added donorPan
+        if (!amount || !campaignId || !donorName) { // PAN is optional so not validated here
             return res.status(400).json({ success: false, message: 'Amount, campaignId, and donorName are required' });
         }
         const receiptId = `receipt_${uuidv4().substring(0, 20)}`;
@@ -451,12 +447,14 @@ app.post('/api/payments/create-order', async (req, res) => {
             amount: amount * 100,
             currency: 'INR',
             receipt: receiptId,
-            notes: { campaignId, donorName }
+            notes: { campaignId, donorName, donorPan } // MODIFIED: Added donorPan to notes
         };
         const order = await razorpay.orders.create(options);
+        
+        // MODIFIED: Save donor's PAN to the database
         await pool.query(
-            'INSERT INTO donations (campaign_id, donor_name, amount, razorpay_order_id, status) VALUES ($1, $2, $3, $4, $5)',
-            [campaignId, donorName, amount, order.id, 'pending']
+            'INSERT INTO donations (campaign_id, donor_name, donor_pan, amount, razorpay_order_id, status) VALUES ($1, $2, $3, $4, $5, $6)',
+            [campaignId, donorName, donorPan || null, amount, order.id, 'pending']
         );
         res.json({
             success: true,
