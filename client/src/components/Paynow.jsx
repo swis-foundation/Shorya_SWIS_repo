@@ -12,12 +12,11 @@ const Paynow = () => {
     phone: "",
     email: "",
     amount: "",
-    pan: "", // Added PAN field
+    pan: "",
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Fetch campaign details on component mount to get the title
   useEffect(() => {
     const fetchCampaign = async () => {
       try {
@@ -41,10 +40,8 @@ const Paynow = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      // Convert PAN to uppercase as the user types
       [name]: name === "pan" ? value.toUpperCase() : value,
     }));
-    // Clear error on change
     if (errors[name]) {
         setErrors(prev => ({ ...prev, [name]: null }));
     }
@@ -60,8 +57,10 @@ const Paynow = () => {
     if (!formData.amount) newErrors.amount = "Amount is required.";
     else if (parseFloat(formData.amount) < 50) newErrors.amount = "Minimum donation is ₹50.";
 
-    // PAN is optional, but if filled, it must be valid
-    if (formData.pan && !panRegex.test(formData.pan)) {
+    // **MODIFIED:** PAN validation is now mandatory
+    if (!formData.pan) {
+        newErrors.pan = "PAN number is required.";
+    } else if (!panRegex.test(formData.pan)) {
         newErrors.pan = "Invalid PAN number format.";
     }
 
@@ -81,7 +80,7 @@ const Paynow = () => {
           amount: amount,
           campaignId: id,
           donorName: name,
-          donorPan: pan, // Send PAN to backend
+          donorPan: pan,
         }),
       });
 
@@ -136,7 +135,7 @@ const Paynow = () => {
   return (
     <div className="w-full min-h-screen flex items-center justify-center bg-gray-100 p-4">
         <style>{`
-            .input { @apply w-full py-3 px-6 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-lime-600; }
+            .input { @apply w-full py-3 px-4 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-600; }
             .error-text { @apply text-red-500 text-xs px-4 -mt-2 mb-1; }
       `}</style>
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
@@ -149,28 +148,28 @@ const Paynow = () => {
 
         <div className="space-y-3">
             <div>
-                <input type="text" name="name" placeholder="Name*" value={formData.name} onChange={handleChange} className={`input ${errors.name && 'border border-red-500'}`} />
+                <input type="text" name="name" placeholder="Name*" value={formData.name} onChange={handleChange} className={`input ${errors.name && 'border-red-500'}`} />
                 {errors.name && <p className="error-text">{errors.name}</p>}
             </div>
             <div>
-                <input type="email" name="email" placeholder="Email*" value={formData.email} onChange={handleChange} className={`input ${errors.email && 'border border-red-500'}`} />
+                <input type="email" name="email" placeholder="Email*" value={formData.email} onChange={handleChange} className={`input ${errors.email && 'border-red-500'}`} />
                 {errors.email && <p className="error-text">{errors.email}</p>}
             </div>
             <div>
-                <input type="number" name="phone" placeholder="Phone Number*" value={formData.phone} onChange={handleChange} className={`input ${errors.phone && 'border border-red-500'}`} />
+                <input type="number" name="phone" placeholder="Phone Number*" value={formData.phone} onChange={handleChange} className={`input ${errors.phone && 'border-red-500'}`} />
                 {errors.phone && <p className="error-text">{errors.phone}</p>}
             </div>
             <div>
-                <input type="text" name="pan" placeholder="PAN Number (Optional)" value={formData.pan} onChange={handleChange} className={`input uppercase ${errors.pan && 'border border-red-500'}`} />
+                <input type="text" name="pan" placeholder="PAN Number*" value={formData.pan} onChange={handleChange} className={`input uppercase ${errors.pan && 'border-red-500'}`} />
                 {errors.pan && <p className="error-text">{errors.pan}</p>}
             </div>
             <div>
-                <input type="number" name="amount" placeholder="Amount* (Min ₹50)" value={formData.amount} onChange={handleChange} className={`input ${errors.amount && 'border border-red-500'}`} />
+                <input type="number" name="amount" placeholder="Amount* (Min ₹50)" value={formData.amount} onChange={handleChange} className={`input ${errors.amount && 'border-red-500'}`} />
                 {errors.amount && <p className="error-text">{errors.amount}</p>}
             </div>
         </div>
 
-        <button onClick={handlePayment} className="w-full py-3 mt-6 bg-lime-600 hover:bg-lime-700 text-white rounded-full font-medium uppercase">
+        <button onClick={handlePayment} className="w-full py-3 mt-6 bg-lime-600 hover:bg-lime-700 text-white rounded-lg font-medium uppercase">
           Pay Now
         </button>
       </div>
