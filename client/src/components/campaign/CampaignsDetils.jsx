@@ -1,11 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
-import { FaArrowLeft } from "react-icons/fa";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { FaArrowLeft, FaCheckCircle, FaTimes } from "react-icons/fa";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
+// A new component to display the success message
+const SuccessMessage = ({ onClose }) => (
+    <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md shadow-lg mb-8 flex justify-between items-center">
+        <div className="flex items-center">
+            <FaCheckCircle className="mr-3" />
+            <div>
+                <p className="font-bold">Thank You for Your Donation!</p>
+                <p>Your contribution has been successfully processed. You're making a real difference!</p>
+            </div>
+        </div>
+        <button onClick={onClose} className="text-green-700 hover:text-green-900">
+            <FaTimes />
+        </button>
+    </div>
+);
+
 const CategoryCard = ({ category, onClick }) => {
-    const progressPercentage = (category.total_raised / category.total_goal) * 100;
+    const progressPercentage = category.total_goal > 0 ? (category.total_raised / category.total_goal) * 100 : 0;
     const progressStyle = {
       width: `${Math.min(progressPercentage, 100)}%`
     };
@@ -25,7 +41,7 @@ const CategoryCard = ({ category, onClick }) => {
                 </div>
                 <div className="text-sm text-gray-700">
                     <span className="font-bold">₹{Number(category.total_raised).toLocaleString()}</span> raised of ₹{Number(category.total_goal).toLocaleString()}
-                    <span className="text-lime-600 font-semibold ml-2">({Math.floor(progressPercentage)}%)</span>
+                    <span className="text-lime-600 font-semibold ml-2">({Math.round(progressPercentage)}%)</span>
                 </div>
             </div>
         </div>
@@ -34,7 +50,7 @@ const CategoryCard = ({ category, onClick }) => {
 
 const CampaignCard = ({ campaign }) => {
   const navigate = useNavigate();
-  const progressPercentage = (campaign.raised_amount / campaign.target_amount) * 100;
+  const progressPercentage = campaign.target_amount > 0 ? (campaign.raised_amount / campaign.target_amount) * 100 : 0;
   const progressStyle = {
     width: `${Math.min(progressPercentage, 100)}%`
   };
@@ -77,17 +93,26 @@ const CampaignsDetails = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const location = useLocation(); // Get location object from router
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  // **MODIFIED:** Check for a category passed from another page (like the homepage)
+  // **MODIFIED:** Check for the success flag from Razorpay on page load
+  useEffect(() => {
+    if (searchParams.get("payment") === "success") {
+      setShowSuccess(true);
+      // Clean the URL so the message doesn't reappear on refresh
+      searchParams.delete("payment");
+      setSearchParams(searchParams);
+    }
+  }, [searchParams, setSearchParams]);
+
   useEffect(() => {
     if (location.state?.category) {
       setSelectedCategory(location.state.category);
     }
   }, [location.state]);
 
-
-  // Fetch categories on component mount if no category is pre-selected
   useEffect(() => {
     if (!selectedCategory) {
         const fetchCategories = async () => {
@@ -108,9 +133,8 @@ const CampaignsDetails = () => {
           };
           fetchCategories();
     }
-  }, [selectedCategory]); // Re-fetch categories if we go back
+  }, [selectedCategory]);
 
-  // Fetch campaigns when a category is selected
   useEffect(() => {
     if (!selectedCategory) {
       setCampaigns([]);
@@ -119,7 +143,7 @@ const CampaignsDetails = () => {
     const fetchCampaigns = async () => {
       try {
         setLoading(true);
-        setError(''); // Clear previous errors
+        setError('');
         const response = await fetch(`${backendUrl}/api/campaigns?category=${encodeURIComponent(selectedCategory)}`);
         const data = await response.json();
         if (data.success) {
@@ -138,6 +162,10 @@ const CampaignsDetails = () => {
 
   return (
     <div className="px-4 sm:px-6 md:px-16 py-8 bg-[#f9f8f3] min-h-screen">
+      
+      {/* **MODIFIED:** Display the success message when needed */}
+      {showSuccess && <SuccessMessage onClose={() => setShowSuccess(false)} />}
+
       <h1 className="text-3xl text-center font-bold text-lime-600 mb-2">
         {selectedCategory ? `Campaigns in ${selectedCategory}` : "Explore Campaigns by Category"}
       </h1>
@@ -149,7 +177,6 @@ const CampaignsDetails = () => {
         <button 
           onClick={() => {
             setSelectedCategory(null);
-            // Clear category from navigation state to prevent re-triggering
             window.history.replaceState({}, document.title)
           }}
           className="flex items-center gap-2 mb-8 text-lime-600 hover:underline"
@@ -163,7 +190,6 @@ const CampaignsDetails = () => {
 
       {!loading && !error && (
         <>
-          {/* **MODIFIED:** Logic to handle empty campaigns in a selected category */}
           {selectedCategory && campaigns.length === 0 && (
             <div className="text-center text-gray-500 bg-white p-8 rounded-lg shadow-md">
               <h3 className="text-xl font-semibold mb-2">No Active Campaigns</h3>
