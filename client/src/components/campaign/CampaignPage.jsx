@@ -1,38 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import RealTimeProgressBar from "./RealTimeProgressBar";
-import DOMPurify from 'dompurify';
+import DOMPurify from 'dompurify'; // Import DOMPurify for security
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-
-// **NEW:** A dedicated component to handle the Razorpay Payment Button script
-const RazorpayButton = ({ campaignId }) => {
-  useEffect(() => {
-    const form = document.createElement('form');
-    
-    const script = document.createElement('script');
-    script.src = "https://checkout.razorpay.com/v1/payment-button.js";
-    script.async = true;
-    script.setAttribute('data-payment_button_id', "pl_RCgV9ODg8p5LN1");
-    
-    // **CRITICAL STEP:** This passes your campaign's unique ID to Razorpay.
-    // Your webhook will receive this in the payment notes.
-    script.setAttribute('data-notes.campaignId', campaignId);
-
-    form.appendChild(script);
-    document.getElementById('razorpay-container').appendChild(form);
-
-    return () => {
-      const container = document.getElementById('razorpay-container');
-      if (container) {
-        container.innerHTML = "";
-      }
-    };
-  }, [campaignId]);
-
-  return <div id="razorpay-container"></div>;
-};
-
 
 const SectionCard = ({ title, children }) => (
   <div className="bg-white p-6 md:p-8 rounded-xl shadow-xl">
@@ -92,17 +63,23 @@ const CampaignPage = () => {
     fetchCampaign();
   }, [id]);
   
+  // Helper to create sanitized HTML for rendering
   const createMarkup = (htmlContent) => {
+    // Sanitize the HTML content to prevent XSS attacks before rendering
     return { __html: DOMPurify.sanitize(htmlContent) };
   };
   
+  // Helper to create a plain text short description from HTML
   const getShortDescription = (htmlContent) => {
       if (!htmlContent) return "";
+      // Create a temporary div to parse the HTML and get its text content
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = htmlContent;
       const text = tempDiv.textContent || tempDiv.innerText || "";
+      // Take the first 150 characters for a concise summary
       return text.substring(0, 150) + (text.length > 150 ? "..." : "");
   };
+
 
   if (loading) {
     return (
@@ -122,6 +99,7 @@ const CampaignPage = () => {
 
   return (
     <div className="bg-[#f9f8f3] min-h-screen font-sans">
+      {/* Header */}
       <div className="bg-gradient-to-r from-lime-100 via-lime-50 to-white py-12 px-4 sm:px-10 lg:px-24 shadow-sm">
         <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 leading-snug">
           {campaign.title}
@@ -131,8 +109,11 @@ const CampaignPage = () => {
         </p>
       </div>
 
+      {/* Main Grid */}
       <div className="py-10 px-4 sm:px-10 lg:px-24 max-w-7xl mx-auto grid lg:grid-cols-3 gap-10">
+        {/* Left Side */}
         <div className="lg:col-span-2 space-y-10">
+          {/* Cover Image */}
           <div className="rounded-2xl overflow-hidden shadow-xl">
             <img
               src={`${backendUrl}/uploads/${campaign.image}`}
@@ -140,6 +121,8 @@ const CampaignPage = () => {
               className="w-full h-[300px] md:h-[400px] object-cover"
             />
           </div>
+
+          {/* Title */}
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
               {campaign.title}
@@ -149,6 +132,8 @@ const CampaignPage = () => {
               <span className="font-semibold">{campaign.creator_name}</span>
             </p>
           </div>
+
+          {/* Tabs */}
           <div className="flex gap-6 border-b pb-2 text-lg">
             {["details", "donors"].map((tab) => (
               <button
@@ -164,9 +149,11 @@ const CampaignPage = () => {
             ))}
           </div>
 
+          {/* Tab Content */}
           {activeTab === "details" && (
             <>
               <SectionCard title="About the Campaign">
+                {/* **MODIFIED:** Render the sanitized HTML description */}
                 <div 
                     className="prose max-w-none" 
                     dangerouslySetInnerHTML={createMarkup(campaign.description)} 
@@ -192,6 +179,7 @@ const CampaignPage = () => {
           )}
         </div>
 
+        {/* Right Sidebar */}
         <div className="sticky top-24">
           <div className="bg-white p-10 md:p-12 rounded-3xl shadow-2xl space-y-8 border-2 border-lime-200 w-full max-w-lg mx-auto">
             <h3 className="text-lg text-gray-600 mb-2">
@@ -208,10 +196,11 @@ const CampaignPage = () => {
             <p className="text-lg text-gray-600">
               <span className="font-bold">{campaign.supporters}</span> Donors
             </p>
-            
-            {/* **MODIFIED:** Replaced the Link with the new RazorpayButton component */}
-            <RazorpayButton campaignId={campaign.id} />
-
+            <Link to={`/campaigns/${campaign.id}/donate`}>
+              <button className="w-full bg-lime-600 hover:bg-lime-700 text-white text-xl font-bold py-4 rounded-2xl transition duration-300 shadow-lg">
+                DONATE NOW
+              </button>
+            </Link>
             <div className="text-sm text-gray-500 space-y-1 pt-2 text-center">
               <p>📌 {campaign.supporters} people have donated</p>
               <p>📚 Category: {campaign.category}</p>
@@ -266,4 +255,3 @@ const DonorsList = ({ campaignId }) => {
 
 
 export default CampaignPage;
-
