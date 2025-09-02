@@ -9,6 +9,10 @@ if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   console.error("FATAL ERROR: Razorpay API keys are not defined. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment variables.");
   process.exit(1);
 }
+if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
+    console.warn("WARNING: RAZORPAY_WEBHOOK_SECRET is not defined. Webhook verification will be skipped.");
+}
+
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -64,30 +68,67 @@ const io = new Server(server, {
 });
 
 app.use(cors());
+
+// This webhook route must come BEFORE bodyParser.json()
+app.post('/api/payments/webhook', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    if (secret) {
+        const shasum = crypto.createHmac('sha256', secret);
+        shasum.update(req.body);
+        const digest = shasum.digest('hex');
+
+        if (digest !== req.headers['x-razorpay-signature']) {
+            console.error('Webhook signature validation failed.');
+            return res.status(400).json({ status: 'Signature validation failed' });
+        }
+    }
+
+    const event = JSON.parse(req.body.toString());
+
+    if (event.event === 'payment.captured') {
+        const payment = event.payload.payment.entity;
+        const { order_id, amount, email, contact } = payment;
+        const { campaignId, donorName, donorPan } = payment.notes;
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const donationQuery = `
+                INSERT INTO donations (campaign_id, donor_name, donor_pan, amount, razorpay_order_id, razorpay_payment_id, status)
+                VALUES ($1, $2, $3, $4, $5, $6, 'success')
+                ON CONFLICT (razorpay_order_id) DO UPDATE SET
+                razorpay_payment_id = EXCLUDED.razorpay_payment_id,
+                status = 'success';
+            `;
+            await client.query(donationQuery, [campaignId, donorName, donorPan, amount / 100, order_id, payment.id]);
+            
+            const campaignUpdateQuery = `
+                UPDATE campaigns 
+                SET raised_amount = raised_amount + $1, supporters = supporters + 1 
+                WHERE id = $2;
+            `;
+            await client.query(campaignUpdateQuery, [amount / 100, campaignId]);
+
+            await client.query('COMMIT');
+            console.log(`Successfully processed webhook for order ${order_id}`);
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('Error processing webhook:', err.stack);
+        } finally {
+            client.release();
+        }
+    }
+
+    res.json({ status: 'ok' });
+});
+
+
 app.use(express.static('public'));
 app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, UPLOADS_DIR);
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
-  }
-});
-const upload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed!'), false);
-    }
-  }
-});
 
 async function initializeDatabase() {
   let client;
@@ -279,7 +320,6 @@ app.post('/api/image-upload', upload.single('image'), (req, res) => {
 
 app.get('/api/campaigns', async (req, res) => {
   const { category } = req.query;
-  // **MODIFIED:** Added a check to only get campaigns that have not expired
   let query = `
     SELECT 
       id, title, description, target_amount, raised_amount, 
@@ -310,7 +350,6 @@ app.get('/api/campaigns', async (req, res) => {
 
 app.get('/api/categories', async (req, res) => {
     try {
-      // **MODIFIED:** This query now also only considers active (non-expired) campaigns
       const result = await pool.query(`
         SELECT
           category,
@@ -437,6 +476,8 @@ app.put('/api/admin/campaigns/:id/status', async (req, res) => {
 
 // --- PAYMENT ROUTES ---
 
+// NOTE: These routes are for the custom API integration.
+// They can co-exist with the webhook but might be redundant if you only use the Payment Button.
 app.post('/api/payments/create-order', async (req, res) => {
     try {
         const { amount, campaignId, donorName, donorPan } = req.body;
@@ -525,4 +566,3 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
-
