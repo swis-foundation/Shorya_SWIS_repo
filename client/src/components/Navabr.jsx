@@ -61,10 +61,10 @@ function Navbar() {
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 md:px-8">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center">
-            <img
-              src="https://images.squarespace-cdn.com/content/v1/591fb1cfb3db2b2e45f3350d/1526471032464-SHDL19LWGHHJ4M6KK3BX/Sustainable.jpg"
-              alt="Logo"
-              className="h-8 sm:h-10 w-auto object-contain"
+           <img
+              src="/swis-logo.jpg"
+              alt="Seed The Change Logo"
+              className="h-10 w-auto object-contain"
             />
           </Link>
 
