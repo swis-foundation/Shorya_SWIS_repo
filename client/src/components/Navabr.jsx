@@ -38,10 +38,8 @@ function Navbar() {
     navigate("/");
   };
   
-  // **MODIFIED:** Added a text shadow for better visibility on transparent backgrounds
-  const navLinkClasses = sticky 
-    ? "text-brand-text hover:text-brand-primary" 
-    : "text-white hover:text-gray-200 [text-shadow:0_1px_3px_rgb(0_0_0_/_0.5)]";
+  // **MODIFIED:** Text color is now always dark for better visibility.
+  const navLinkClasses = "text-brand-text hover:text-brand-primary";
 
   const navItems = (
     <>
@@ -59,8 +57,8 @@ function Navbar() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         sticky 
-          ? "bg-brand-background/95 backdrop-blur-sm shadow-md" 
-          : "bg-transparent"
+          ? "bg-brand-background shadow-md" 
+          : "bg-brand-background/80 backdrop-blur-sm"
       }`}
     >
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 md:px-8">
@@ -91,11 +89,11 @@ function Navbar() {
               </>
             ) : (
               <>
-                {/* **MODIFIED:** Added text shadow to login/signup buttons for visibility */}
-                <Link to="/login" className={`px-4 py-2 rounded-md text-sm font-semibold transition ${sticky ? 'text-brand-primary border border-brand-primary hover:bg-brand-primary hover:text-white' : 'bg-white/20 hover:bg-white/30 text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_0.4)]'}`}>
+                {/* **MODIFIED:** Button styles are now consistent */}
+                <Link to="/login" className="border border-brand-primary text-brand-primary px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary hover:text-white transition">
                   Login
                 </Link>
-                 <Link to="/signup" className={`px-4 py-2 rounded-md text-sm font-semibold transition ${sticky ? 'text-brand-primary border border-brand-primary hover:bg-brand-primary hover:text-white' : 'bg-white/20 hover:bg-white/30 text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_0.4)]'}`}>
+                 <Link to="/signup" className="border border-brand-primary text-brand-primary px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary hover:text-white transition">
                   Sign Up
                 </Link>
                 <Link to="/start-campaign" className="bg-brand-primary text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary-hover transition">
@@ -108,7 +106,7 @@ function Navbar() {
           <div className="md:hidden">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className={`focus:outline-none transition-all ${sticky ? 'text-brand-text' : 'text-white [filter:drop-shadow(0_1px_2px_rgb(0_0_0_/_0.5))]'}`}
+              className="focus:outline-none transition-all text-brand-text"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {menuOpen ? (
@@ -124,7 +122,6 @@ function Navbar() {
         {menuOpen && (
           <div className="md:hidden mt-2 bg-brand-background rounded-md shadow-lg px-4 py-3 text-sm text-brand-text">
             <ul className="flex flex-col gap-1">
-              {/* Re-applying the classes here for mobile menu */}
               <li><Link to="/" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">Home</Link></li>
               <li><Link to="/aboutUs" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">About Us</Link></li>
               <li><Link to="/how-it-works" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">How it Works</Link></li>
