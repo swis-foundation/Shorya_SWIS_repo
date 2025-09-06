@@ -38,8 +38,10 @@ function Navbar() {
     navigate("/");
   };
   
-  // Dynamically set link colors based on whether the navbar is sticky or transparent
-  const navLinkClasses = sticky ? "text-brand-text hover:text-brand-primary" : "text-white hover:text-gray-200";
+  // **MODIFIED:** Added a text shadow for better visibility on transparent backgrounds
+  const navLinkClasses = sticky 
+    ? "text-brand-text hover:text-brand-primary" 
+    : "text-white hover:text-gray-200 [text-shadow:0_1px_3px_rgb(0_0_0_/_0.5)]";
 
   const navItems = (
     <>
@@ -89,10 +91,11 @@ function Navbar() {
               </>
             ) : (
               <>
-                <Link to="/login" className={`px-4 py-2 rounded-md text-sm font-semibold transition ${sticky ? 'text-brand-primary border border-brand-primary hover:bg-brand-primary hover:text-white' : 'bg-white/20 hover:bg-white/30 text-white'}`}>
+                {/* **MODIFIED:** Added text shadow to login/signup buttons for visibility */}
+                <Link to="/login" className={`px-4 py-2 rounded-md text-sm font-semibold transition ${sticky ? 'text-brand-primary border border-brand-primary hover:bg-brand-primary hover:text-white' : 'bg-white/20 hover:bg-white/30 text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_0.4)]'}`}>
                   Login
                 </Link>
-                 <Link to="/signup" className={`px-4 py-2 rounded-md text-sm font-semibold transition ${sticky ? 'text-brand-primary border border-brand-primary hover:bg-brand-primary hover:text-white' : 'bg-white/20 hover:bg-white/30 text-white'}`}>
+                 <Link to="/signup" className={`px-4 py-2 rounded-md text-sm font-semibold transition ${sticky ? 'text-brand-primary border border-brand-primary hover:bg-brand-primary hover:text-white' : 'bg-white/20 hover:bg-white/30 text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_0.4)]'}`}>
                   Sign Up
                 </Link>
                 <Link to="/start-campaign" className="bg-brand-primary text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary-hover transition">
@@ -105,7 +108,7 @@ function Navbar() {
           <div className="md:hidden">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className={`focus:outline-none ${sticky ? 'text-brand-text' : 'text-white'}`}
+              className={`focus:outline-none transition-all ${sticky ? 'text-brand-text' : 'text-white [filter:drop-shadow(0_1px_2px_rgb(0_0_0_/_0.5))]'}`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {menuOpen ? (
@@ -120,7 +123,16 @@ function Navbar() {
 
         {menuOpen && (
           <div className="md:hidden mt-2 bg-brand-background rounded-md shadow-lg px-4 py-3 text-sm text-brand-text">
-            <ul className="flex flex-col gap-1">{navItems}</ul>
+            <ul className="flex flex-col gap-1">
+              {/* Re-applying the classes here for mobile menu */}
+              <li><Link to="/" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">Home</Link></li>
+              <li><Link to="/aboutUs" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">About Us</Link></li>
+              <li><Link to="/how-it-works" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">How it Works</Link></li>
+              <li><Link to="/campaigns" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">Campaigns</Link></li>
+              {user && user.user_type === 'admin' && (
+                <li><Link to="/admin" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">Admin</Link></li>
+              )}
+            </ul>
             <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col gap-2">
               {user ? (
                  <>
