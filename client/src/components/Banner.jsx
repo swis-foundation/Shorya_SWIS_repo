@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Slider from "react-slick";
 import { Link } from 'react-router-dom';
 
@@ -27,11 +27,17 @@ const bannerData = [
 ];
 
 const Banner = () => {
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
     const settings = {
         dots: true,
-        infinite: true, // This handles the "auto repeat"
+        infinite: true,
         autoplay: true,
-        autoplaySpeed: 3000, // MODIFIED: Changed interval to 3 seconds
+        autoplaySpeed: 3000,
         speed: 800,
         arrows: false,
         fade: true,
@@ -41,29 +47,31 @@ const Banner = () => {
 
     return (
         <section className="relative w-full h-screen overflow-hidden">
-            <Slider {...settings} className="h-full">
-                {bannerData.map((item, idx) => (
-                    <div key={idx} className="relative h-screen">
-                        <img
-                            src={item.image}
-                            alt={item.heading}
-                            className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-center text-white p-4">
-                            <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-4 [text-shadow:0_2px_4px_rgb(0_0_0_/_0.5)]">
-                                {item.heading} <span className="text-brand-secondary">{item.subheading}</span>
-                            </h1>
-                            <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8 [text-shadow:0_1px_3px_rgb(0_0_0_/_0.5)]">{item.tagline}</p>
-                            <Link
-                                to="/start-campaign"
-                                className="bg-brand-primary hover:bg-brand-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-300"
-                            >
-                                {item.buttonText}
-                            </Link>
+            {isClient && (
+                <Slider {...settings} className="h-full">
+                    {bannerData.map((item, idx) => (
+                        <div key={idx} className="relative h-screen">
+                            <img
+                                src={item.image}
+                                alt={item.heading}
+                                className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-center text-white p-4">
+                                <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-4 [text-shadow:0_2px_4px_rgb(0_0_0_/_0.5)]">
+                                    {item.heading} <span className="text-brand-secondary">{item.subheading}</span>
+                                </h1>
+                                <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8 [text-shadow:0_1px_3px_rgb(0_0_0_/_0.5)]">{item.tagline}</p>
+                                <Link
+                                    to="/start-campaign"
+                                    className="bg-brand-primary hover:bg-brand-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-300"
+                                >
+                                    {item.buttonText}
+                                </Link>
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </Slider>
+                    ))}
+                </Slider>
+            )}
         </section>
     );
 };
