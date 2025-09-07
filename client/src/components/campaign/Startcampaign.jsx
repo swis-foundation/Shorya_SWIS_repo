@@ -165,25 +165,24 @@ const StartCampaign = () => {
 
   const renderStep1 = () => (
     <>
-      <h3 className="text-xl font-semibold text-center text-gray-800 mb-4">Step 1: Your Details</h3>
+      <h3 className="text-xl font-semibold text-center text-brand-text mb-4">Step 1: Your Details</h3>
       <div>
-        <label className="block text-gray-700 font-medium mb-1">Full Name</label>
+        <label className="block text-brand-text font-medium mb-1">Full Name</label>
         <input type="text" name="creator_name" value={formData.creator_name} onChange={handleChange} placeholder="Enter your full name" className={`w-full input ${errors.creator_name && 'border-red-500'}`} />
         {errors.creator_name && <p className="text-red-500 text-sm mt-1">{errors.creator_name}</p>}
       </div>
       <div>
-        <label className="block text-gray-700 font-medium mb-1">Email</label>
+        <label className="block text-brand-text font-medium mb-1">Email</label>
         <input type="email" name="creator_email" value={formData.creator_email} onChange={handleChange} placeholder="Enter your email" className={`w-full input ${errors.creator_email && 'border-red-500'}`} />
         {errors.creator_email && <p className="text-red-500 text-sm mt-1">{errors.creator_email}</p>}
       </div>
       <div>
-        <label className="block text-gray-700 font-medium mb-1">Phone Number</label>
+        <label className="block text-brand-text font-medium mb-1">Phone Number</label>
         <input type="tel" name="creator_phone" value={formData.creator_phone} onChange={handleChange} placeholder="Enter your 10-digit phone number" className={`w-full input ${errors.creator_phone && 'border-red-500'}`} />
         {errors.creator_phone && <p className="text-red-500 text-sm mt-1">{errors.creator_phone}</p>}
       </div>
       <div>
-        {/* MODIFIED: Label now says "(Optional)" */}
-        <label className="block text-gray-700 font-medium mb-1">PAN Number (Optional)</label>
+        <label className="block text-brand-text font-medium mb-1">PAN Number (Optional)</label>
         <input type="text" name="creator_pan" value={formData.creator_pan} onChange={handleChange} placeholder="Enter your PAN number" className={`w-full input uppercase ${errors.creator_pan && 'border-red-500'}`} />
         {errors.creator_pan && <p className="text-red-500 text-sm mt-1">{errors.creator_pan}</p>}
       </div>
@@ -193,14 +192,14 @@ const StartCampaign = () => {
 
   const renderStep2 = () => (
     <>
-      <h3 className="text-xl font-semibold text-center text-gray-800 mb-4">Step 2: Campaign Details</h3>
+      <h3 className="text-xl font-semibold text-center text-brand-text mb-4">Step 2: Campaign Details</h3>
       <div>
-        <label className="block text-gray-700 font-medium mb-1">Campaign Title</label>
+        <label className="block text-brand-text font-medium mb-1">Campaign Title</label>
         <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="e.g., Help Rebuild the Local Library" className={`w-full input ${errors.title && 'border-red-500'}`} />
         {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
       </div>
       <div>
-        <label className="block text-gray-700 font-medium mb-1">Description</label>
+        <label className="block text-brand-text font-medium mb-1">Description</label>
         <ReactQuill 
             ref={quillRef}
             theme="snow" 
@@ -213,18 +212,18 @@ const StartCampaign = () => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-            <label className="block text-gray-700 font-medium mb-1">Goal Amount (₹)</label>
+            <label className="block text-brand-text font-medium mb-1">Goal Amount (₹)</label>
             <input type="number" name="target_amount" value={formData.target_amount} onChange={handleChange} placeholder="e.g., 50000" className={`w-full input ${errors.target_amount && 'border-red-500'}`} />
             {errors.target_amount && <p className="text-red-500 text-sm mt-1">{errors.target_amount}</p>}
         </div>
         <div>
-            <label className="block text-gray-700 font-medium mb-1">Campaign Duration (Days)</label>
+            <label className="block text-brand-text font-medium mb-1">Campaign Duration (Days)</label>
             <input type="number" name="days_left" value={formData.days_left} onChange={handleChange} placeholder="e.g., 30" className={`w-full input ${errors.days_left && 'border-red-500'}`} />
             {errors.days_left && <p className="text-red-500 text-sm mt-1">{errors.days_left}</p>}
         </div>
       </div>
        <div>
-        <label className="block text-gray-700 font-medium mb-1">Category</label>
+        <label className="block text-brand-text font-medium mb-1">Category</label>
         <select name="category" value={formData.category} onChange={handleChange} className={`w-full input ${errors.category && 'border-red-500'}`}>
             <option value="">Select a category</option>
             <option value="Education">Education</option>
@@ -237,33 +236,33 @@ const StartCampaign = () => {
         {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
       </div>
       <div>
-        <label className="block text-gray-700 font-medium mb-1">Location</label>
+        <label className="block text-brand-text font-medium mb-1">Location</label>
         <input type="text" name="location" value={formData.location} onChange={handleChange} placeholder="e.g., Bhopal, Madhya Pradesh" className={`w-full input ${errors.location && 'border-red-500'}`} />
         {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
       </div>
       <div>
-        <label className="block text-gray-700 font-medium mb-1">Campaign Cover Image</label>
-        <input type="file" name="image" onChange={handleChange} accept="image/*" className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-lime-50 file:text-lime-700 hover:file:bg-lime-100 ${errors.image && 'border-red-500'}`} />
+        <label className="block text-brand-text font-medium mb-1">Campaign Cover Image</label>
+        <input type="file" name="image" onChange={handleChange} accept="image/*" className={`w-full text-sm text-brand-text-light file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-secondary/20 file:text-brand-primary hover:file:bg-brand-secondary/30 ${errors.image && 'border-red-500'}`} />
         {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
       </div>
       <div className="flex items-center gap-2">
-        <input type="checkbox" name="is_ngo" checked={formData.is_ngo} onChange={handleChange} id="is_ngo_checkbox" className="h-4 w-4 rounded" />
-        <label htmlFor="is_ngo_checkbox" className="text-gray-700">This campaign is on behalf of an NGO.</label>
+        <input type="checkbox" name="is_ngo" checked={formData.is_ngo} onChange={handleChange} id="is_ngo_checkbox" className="h-4 w-4 rounded text-brand-primary focus:ring-brand-primary" />
+        <label htmlFor="is_ngo_checkbox" className="text-brand-text">This campaign is on behalf of an NGO.</label>
       </div>
       {formData.is_ngo && (
-        <div className="space-y-4 border-l-4 border-lime-500 pl-4 mt-4">
+        <div className="space-y-4 border-l-4 border-brand-primary pl-4 mt-4">
             <div>
-                <label className="block text-gray-700 font-medium mb-1">NGO Name</label>
+                <label className="block text-brand-text font-medium mb-1">NGO Name</label>
                 <input type="text" name="ngo_name" value={formData.ngo_name} onChange={handleChange} placeholder="Name of the organization" className={`w-full input ${errors.ngo_name && 'border-red-500'}`} />
                 {errors.ngo_name && <p className="text-red-500 text-sm mt-1">{errors.ngo_name}</p>}
             </div>
             <div>
-                <label className="block text-gray-700 font-medium mb-1">NGO Address</label>
+                <label className="block text-brand-text font-medium mb-1">NGO Address</label>
                 <input type="text" name="ngo_address" value={formData.ngo_address} onChange={handleChange} placeholder="Full address of the NGO" className={`w-full input ${errors.ngo_address && 'border-red-500'}`} />
                 {errors.ngo_address && <p className="text-red-500 text-sm mt-1">{errors.ngo_address}</p>}
             </div>
              <div>
-                <label className="block text-gray-700 font-medium mb-1">NGO Website/Facebook Link (Optional)</label>
+                <label className="block text-brand-text font-medium mb-1">NGO Website/Facebook Link (Optional)</label>
                 <input type="text" name="ngo_website" value={formData.ngo_website} onChange={handleChange} placeholder="https://..." className="w-full input" />
             </div>
         </div>
@@ -277,15 +276,15 @@ const StartCampaign = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#f9f8f4] flex justify-center items-center px-4 py-10">
+    <div className="min-h-screen bg-brand-background flex justify-center items-center px-4 py-10">
         <style>{`
-            .input { @apply px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500; }
-            .btn-primary { @apply py-3 bg-lime-600 hover:bg-lime-700 text-white font-bold rounded-lg transition duration-300 disabled:bg-gray-400; }
-            .btn-secondary { @apply py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-lg transition duration-300; }
+            .input { @apply px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary; }
+            .btn-primary { @apply py-3 bg-brand-primary hover:bg-brand-primary-hover text-white font-bold rounded-lg transition duration-300 disabled:bg-gray-400; }
+            .btn-secondary { @apply py-3 bg-gray-200 hover:bg-gray-300 text-brand-text font-bold rounded-lg transition duration-300; }
         `}</style>
         <div className="bg-white shadow-lg rounded-xl p-8 w-full max-w-2xl">
-            <h2 className="text-lime-600 text-3xl font-bold text-center mb-2">Start a Campaign</h2>
-            <p className="text-center text-gray-600 text-sm mb-8">Let's get started on making a difference.</p>
+            <h2 className="text-brand-primary text-3xl font-bold text-center mb-2">Start a Campaign</h2>
+            <p className="text-center text-brand-text-light text-sm mb-8">Let's get started on making a difference.</p>
             <form className="space-y-4" onSubmit={handleSubmit} noValidate>
                 {step === 1 ? renderStep1() : renderStep2()}
             </form>
@@ -295,4 +294,3 @@ const StartCampaign = () => {
 };
 
 export default StartCampaign;
-
