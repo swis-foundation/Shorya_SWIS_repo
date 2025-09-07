@@ -37,11 +37,11 @@ const RealTimeProgressBar = ({ campaignId, initialRaised, initialGoal }) => {
     <div>
       <div className="w-full bg-gray-200 h-4 rounded-full overflow-hidden">
         <div
-          className="bg-lime-500 h-full rounded-full transition-all duration-500"
+          className="bg-brand-primary h-full rounded-full transition-all duration-500"
           style={{ width: progressBarWidth }}
         ></div>
       </div>
-      <p className="text-base text-gray-700 mt-2">
+      <p className="text-base text-brand-text-light mt-2">
         {Math.round(progressPercentage)}% of ₹{goalAmount.toLocaleString()} Goal
       </p>
     </div>
