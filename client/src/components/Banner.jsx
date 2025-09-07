@@ -1,7 +1,5 @@
 import React from 'react';
 import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 import { Link } from 'react-router-dom';
 
 const bannerData = [
@@ -42,56 +40,31 @@ const Banner = () => {
     };
 
     return (
-        <>
-            <section className="relative w-full h-screen overflow-hidden">
-                <Slider {...settings}>
-                    {bannerData.map((item, idx) => (
-                        <div key={idx} className="relative h-screen">
-                            <img
-                                src={item.image}
-                                alt={item.heading}
-                                className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-center text-white p-4">
-                                <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-4 [text-shadow:0_2px_4px_rgb(0_0_0_/_0.5)]">
-                                    {item.heading} <span className="text-brand-secondary">{item.subheading}</span>
-                                </h1>
-                                <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8 [text-shadow:0_1px_3px_rgb(0_0_0_/_0.5)]">{item.tagline}</p>
-                                <Link
-                                    to="/start-campaign"
-                                    className="bg-brand-primary hover:bg-brand-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-300"
-                                >
-                                    {item.buttonText}
-                                </Link>
-                            </div>
+        <section className="relative w-full h-screen overflow-hidden">
+            <Slider {...settings} className="h-full">
+                {bannerData.map((item, idx) => (
+                    <div key={idx} className="relative h-screen">
+                        <img
+                            src={item.image}
+                            alt={item.heading}
+                            className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-center text-white p-4">
+                            <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-4 [text-shadow:0_2px_4px_rgb(0_0_0_/_0.5)]">
+                                {item.heading} <span className="text-brand-secondary">{item.subheading}</span>
+                            </h1>
+                            <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8 [text-shadow:0_1px_3px_rgb(0_0_0_/_0.5)]">{item.tagline}</p>
+                            <Link
+                                to="/start-campaign"
+                                className="bg-brand-primary hover:bg-brand-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-300"
+                            >
+                                {item.buttonText}
+                            </Link>
                         </div>
-                    ))}
-                </Slider>
-            </section>
-
-            <style>{`
-                /* Custom styles for slick-dots to use the new brand color */
-                .slick-dots li button:before {
-                    font-size: 12px;
-                    color: white;
-                    opacity: 0.6;
-                    transition: all 0.3s ease;
-                }
-
-                .slick-dots li.slick-active button:before {
-                    color: #F5D0A9; /* This is your brand-secondary color for high visibility */
-                    opacity: 1;
-                }
-                
-                .slick-slider {
-                    height: 100vh;
-                }
-
-                .slick-slide > div {
-                    height: 100vh;
-                }
-            `}</style>
-        </>
+                    </div>
+                ))}
+            </Slider>
+        </section>
     );
 };
 
