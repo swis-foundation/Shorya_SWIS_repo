@@ -9,6 +9,10 @@ if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   console.error("FATAL ERROR: Razorpay API keys are not defined. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment variables.");
   process.exit(1);
 }
+if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
+    console.warn("WARNING: RAZORPAY_WEBHOOK_SECRET is not defined. Webhook verification will be skipped.");
+}
+
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -64,11 +68,55 @@ const io = new Server(server, {
 });
 
 app.use(cors());
+
+app.post('/api/payments/webhook', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (secret) {
+        const shasum = crypto.createHmac('sha256', secret);
+        shasum.update(req.body);
+        const digest = shasum.digest('hex');
+        if (digest !== req.headers['x-razorpay-signature']) {
+            console.error('Webhook signature validation failed.');
+            return res.status(400).json({ status: 'Signature validation failed' });
+        }
+    }
+
+    const event = JSON.parse(req.body.toString());
+    if (event.event === 'payment.captured') {
+        const payment = event.payload.payment.entity;
+        const { order_id, amount } = payment;
+        const { campaignId, donorName, donorPan } = payment.notes;
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const donationQuery = `
+                INSERT INTO donations (campaign_id, donor_name, donor_pan, amount, razorpay_order_id, razorpay_payment_id, status)
+                VALUES ($1, $2, $3, $4, $5, $6, 'success')
+                ON CONFLICT (razorpay_order_id) DO UPDATE SET
+                razorpay_payment_id = EXCLUDED.razorpay_payment_id, status = 'success';
+            `;
+            await client.query(donationQuery, [campaignId, donorName, donorPan, amount / 100, order_id, payment.id]);
+            const campaignUpdateQuery = `
+                UPDATE campaigns SET raised_amount = raised_amount + $1, supporters = supporters + 1 WHERE id = $2;
+            `;
+            await client.query(campaignUpdateQuery, [amount / 100, campaignId]);
+            await client.query('COMMIT');
+            console.log(`Successfully processed webhook for order ${order_id}`);
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('Error processing webhook:', err.stack);
+        } finally {
+            client.release();
+        }
+    }
+    res.json({ status: 'ok' });
+});
+
+
 app.use(express.static('public'));
 app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -189,7 +237,6 @@ async function initializeDatabase() {
     if (client) client.release();
   }
 }
-
 initializeDatabase();
 
 async function startRealTimeListener() {
@@ -209,7 +256,6 @@ async function startRealTimeListener() {
 startRealTimeListener();
 
 // --- AUTHENTICATION ROUTES ---
-
 app.post('/signup', async (req, res) => {
   let client;
   try {
@@ -267,8 +313,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// --- CROWDFUNDING CAMPAIGN ROUTES ---
-
+// --- CAMPAIGN ROUTES ---
 app.post('/api/image-upload', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No image file provided.' });
@@ -277,9 +322,9 @@ app.post('/api/image-upload', upload.single('image'), (req, res) => {
   res.json({ success: true, imageUrl: imageUrl });
 });
 
+// GET active campaigns
 app.get('/api/campaigns', async (req, res) => {
   const { category } = req.query;
-  // **MODIFIED:** Added a check to only get campaigns that have not expired
   let query = `
     SELECT 
       id, title, description, target_amount, raised_amount, 
@@ -291,26 +336,41 @@ app.get('/api/campaigns', async (req, res) => {
     WHERE status = 'approved' AND end_date >= NOW() 
   `;
   const queryParams = [];
-
   if (category) {
     query += ' AND category = $1';
     queryParams.push(category);
   }
-
   query += ' ORDER BY created_at DESC';
-
   try {
     const result = await pool.query(query, queryParams);
     res.json({ success: true, campaigns: result.rows });
   } catch (err) {
-    console.error('Get campaigns error:', err.stack);
+    console.error('Get active campaigns error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error fetching campaigns.' });
   }
 });
 
+// **NEW:** GET completed campaigns
+app.get('/api/campaigns/completed', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT 
+          id, title, description, target_amount, raised_amount, 
+          creator_name, image, category, supporters, location, created_at
+        FROM campaigns 
+        WHERE status = 'approved' AND end_date < NOW()
+        ORDER BY end_date DESC
+      `);
+      res.json({ success: true, campaigns: result.rows });
+    } catch (err) {
+      console.error('Get completed campaigns error:', err.stack);
+      res.status(500).json({ success: false, message: 'Server error fetching completed campaigns.' });
+    }
+  });
+
+
 app.get('/api/categories', async (req, res) => {
     try {
-      // **MODIFIED:** This query now also only considers active (non-expired) campaigns
       const result = await pool.query(`
         SELECT
           category,
@@ -398,7 +458,6 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
 });
 
 // --- ADMIN ROUTES ---
-
 app.get('/api/admin/campaigns/pending', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -436,7 +495,6 @@ app.put('/api/admin/campaigns/:id/status', async (req, res) => {
 });
 
 // --- PAYMENT ROUTES ---
-
 app.post('/api/payments/create-order', async (req, res) => {
     try {
         const { amount, campaignId, donorName, donorPan } = req.body;
@@ -522,6 +580,8 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
   }
 });
 
+// --- SERVER START ---
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
+
