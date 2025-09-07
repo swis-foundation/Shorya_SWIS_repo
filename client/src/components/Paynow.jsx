@@ -56,8 +56,7 @@ const Paynow = () => {
     if (!formData.email) newErrors.email = "Email is required.";
     if (!formData.amount) newErrors.amount = "Amount is required.";
     else if (parseFloat(formData.amount) < 50) newErrors.amount = "Minimum donation is ₹50.";
-
-    // **MODIFIED:** PAN validation is now mandatory
+    
     if (!formData.pan) {
         newErrors.pan = "PAN number is required.";
     } else if (!panRegex.test(formData.pan)) {
@@ -116,7 +115,7 @@ const Paynow = () => {
           }
         },
         prefill: { name, email, contact: phone },
-        theme: { color: "#9C3353" }, // Updated theme color for Razorpay modal
+        theme: { color: "#9C3353" }, // Using brand-primary color
       };
 
       const rzp = new window.Razorpay(options);
@@ -136,40 +135,45 @@ const Paynow = () => {
     <div className="w-full min-h-screen flex items-center justify-center bg-brand-background p-4">
         <style>{`
             .input { @apply w-full py-3 px-4 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary; }
-            .error-text { @apply text-red-500 text-xs px-4 -mt-2 mb-1; }
+            .error-text { @apply text-red-500 text-xs px-2 mt-1; }
       `}</style>
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-2xl font-bold text-center text-brand-text mb-2">
-          Donating to:
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+        <h2 className="text-xl font-semibold text-center text-brand-text-light mb-1">
+          You are donating to
         </h2>
-        <p className="text-xl font-semibold text-center text-brand-primary mb-6 line-clamp-2">
+        <p className="text-2xl font-bold text-center text-brand-primary mb-6 line-clamp-2">
           {campaign ? campaign.title : "..."}
         </p>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
             <div>
-                <input type="text" name="name" placeholder="Name*" value={formData.name} onChange={handleChange} className={`input ${errors.name && 'border-red-500'}`} />
+                <label className="text-sm font-medium text-brand-text-light ml-1">Full Name *</label>
+                <input type="text" name="name" placeholder="Enter your name" value={formData.name} onChange={handleChange} className={`input ${errors.name && 'border-red-500'}`} />
                 {errors.name && <p className="error-text">{errors.name}</p>}
             </div>
             <div>
-                <input type="email" name="email" placeholder="Email*" value={formData.email} onChange={handleChange} className={`input ${errors.email && 'border-red-500'}`} />
+                <label className="text-sm font-medium text-brand-text-light ml-1">Email *</label>
+                <input type="email" name="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} className={`input ${errors.email && 'border-red-500'}`} />
                 {errors.email && <p className="error-text">{errors.email}</p>}
             </div>
             <div>
-                <input type="number" name="phone" placeholder="Phone Number*" value={formData.phone} onChange={handleChange} className={`input ${errors.phone && 'border-red-500'}`} />
+                <label className="text-sm font-medium text-brand-text-light ml-1">Phone Number *</label>
+                <input type="number" name="phone" placeholder="Enter your phone number" value={formData.phone} onChange={handleChange} className={`input ${errors.phone && 'border-red-500'}`} />
                 {errors.phone && <p className="error-text">{errors.phone}</p>}
             </div>
             <div>
-                <input type="text" name="pan" placeholder="PAN Number*" value={formData.pan} onChange={handleChange} className={`input uppercase ${errors.pan && 'border-red-500'}`} />
+                <label className="text-sm font-medium text-brand-text-light ml-1">PAN Number *</label>
+                <input type="text" name="pan" placeholder="Enter your PAN" value={formData.pan} onChange={handleChange} className={`input uppercase ${errors.pan && 'border-red-500'}`} />
                 {errors.pan && <p className="error-text">{errors.pan}</p>}
             </div>
             <div>
-                <input type="number" name="amount" placeholder="Amount* (Min ₹50)" value={formData.amount} onChange={handleChange} className={`input ${errors.amount && 'border-red-500'}`} />
+                <label className="text-sm font-medium text-brand-text-light ml-1">Amount (Min ₹50) *</label>
+                <input type="number" name="amount" placeholder="Enter amount" value={formData.amount} onChange={handleChange} className={`input ${errors.amount && 'border-red-500'}`} />
                 {errors.amount && <p className="error-text">{errors.amount}</p>}
             </div>
         </div>
 
-        <button onClick={handlePayment} className="w-full py-3 mt-6 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-lg font-medium uppercase transition-colors">
+        <button onClick={handlePayment} className="w-full py-3 mt-6 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-lg font-semibold uppercase transition-colors">
           Pay Now
         </button>
       </div>
