@@ -29,9 +29,9 @@ const bannerData = [
 const Banner = () => {
     const settings = {
         dots: true,
-        infinite: true,
+        infinite: true, // This handles the "auto repeat"
         autoplay: true,
-        autoplaySpeed: 4000,
+        autoplaySpeed: 3000, // MODIFIED: Changed interval to 3 seconds
         speed: 800,
         arrows: false,
         fade: true,
