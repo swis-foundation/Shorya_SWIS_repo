@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import RealTimeProgressBar from "./RealTimeProgressBar";
 import DOMPurify from 'dompurify'; // Import DOMPurify for security
+import { FaShareAlt } from "react-icons/fa";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
@@ -43,6 +44,7 @@ const CampaignPage = () => {
   const [campaign, setCampaign] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("details");
+  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
 
   useEffect(() => {
     const fetchCampaign = async () => {
@@ -78,6 +80,31 @@ const CampaignPage = () => {
       const text = tempDiv.textContent || tempDiv.innerText || "";
       // Take the first 150 characters for a concise summary
       return text.substring(0, 150) + (text.length > 150 ? "..." : "");
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: campaign.title,
+      text: getShortDescription(campaign.description),
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      // Fallback for browsers that do not support the Web Share API
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        setShowCopiedMessage(true);
+        setTimeout(() => setShowCopiedMessage(false), 2000); // Hide message after 2 seconds
+      }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        alert('Failed to copy link.');
+      });
+    }
   };
 
 
@@ -200,6 +227,16 @@ const CampaignPage = () => {
                 DONATE NOW
               </button>
             </Link>
+            <button
+              onClick={handleShare}
+              className="w-full mt-2 bg-white border border-brand-primary text-brand-primary hover:bg-brand-secondary/20 font-bold py-3 rounded-2xl transition duration-300 flex items-center justify-center gap-2"
+            >
+              <FaShareAlt />
+              <span>Share</span>
+            </button>
+            {showCopiedMessage && (
+              <p className="text-center text-sm text-green-600 -mt-2">Link copied to clipboard!</p>
+            )}
             <div className="text-sm text-brand-text-light space-y-1 pt-2 text-center">
               <p>📌 {campaign.supporters} people have donated</p>
               <p>📚 Category: {campaign.category}</p>
@@ -253,3 +290,4 @@ const DonorsList = ({ campaignId }) => {
 };
 
 export default CampaignPage;
+
