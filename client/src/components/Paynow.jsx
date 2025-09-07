@@ -116,7 +116,7 @@ const Paynow = () => {
           }
         },
         prefill: { name, email, contact: phone },
-        theme: { color: "#84cc16" },
+        theme: { color: "#9C3353" }, // Updated theme color for Razorpay modal
       };
 
       const rzp = new window.Razorpay(options);
@@ -129,20 +129,20 @@ const Paynow = () => {
   };
 
   if (loading) {
-    return <div className="w-full min-h-screen flex items-center justify-center bg-gray-100">Loading...</div>;
+    return <div className="w-full min-h-screen flex items-center justify-center bg-brand-background">Loading...</div>;
   }
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div className="w-full min-h-screen flex items-center justify-center bg-brand-background p-4">
         <style>{`
-            .input { @apply w-full py-3 px-4 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-600; }
+            .input { @apply w-full py-3 px-4 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary; }
             .error-text { @apply text-red-500 text-xs px-4 -mt-2 mb-1; }
       `}</style>
       <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">
+        <h2 className="text-2xl font-bold text-center text-brand-text mb-2">
           Donating to:
         </h2>
-        <p className="text-xl font-semibold text-center text-lime-600 mb-6 line-clamp-2">
+        <p className="text-xl font-semibold text-center text-brand-primary mb-6 line-clamp-2">
           {campaign ? campaign.title : "..."}
         </p>
 
@@ -169,7 +169,7 @@ const Paynow = () => {
             </div>
         </div>
 
-        <button onClick={handlePayment} className="w-full py-3 mt-6 bg-lime-600 hover:bg-lime-700 text-white rounded-lg font-medium uppercase">
+        <button onClick={handlePayment} className="w-full py-3 mt-6 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-lg font-medium uppercase transition-colors">
           Pay Now
         </button>
       </div>
@@ -178,4 +178,3 @@ const Paynow = () => {
 };
 
 export default Paynow;
-
