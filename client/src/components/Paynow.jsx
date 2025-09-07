@@ -3,6 +3,42 @@ import { useParams, useNavigate } from "react-router-dom";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
+// A custom, redesigned input component for a modern look
+const FloatingLabelInput = ({ label, name, value, onChange, error, ...props }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const hasValue = value && value.length > 0;
+
+  return (
+    <div className="relative pt-4">
+      <label
+        className={`absolute left-0 transition-all duration-300 pointer-events-none ${
+          isFocused || hasValue
+            ? "top-0 text-xs text-brand-primary"
+            : "top-7 text-base text-brand-text-light"
+        }`}
+      >
+        {label}
+      </label>
+      <input
+        name={name}
+        value={value}
+        onChange={onChange}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        className={`w-full py-2 bg-transparent border-b-2 transition-colors duration-300 focus:outline-none ${
+          error
+            ? "border-red-500"
+            : isFocused
+            ? "border-brand-primary"
+            : "border-gray-300"
+        }`}
+        {...props}
+      />
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+    </div>
+  );
+};
+
 const Paynow = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -115,7 +151,7 @@ const Paynow = () => {
           }
         },
         prefill: { name, email, contact: phone },
-        theme: { color: "#9C3353" }, // Using brand-primary color
+        theme: { color: "#9C3353" },
       };
 
       const rzp = new window.Razorpay(options);
@@ -133,47 +169,23 @@ const Paynow = () => {
 
   return (
     <div className="w-full min-h-screen flex items-center justify-center bg-brand-background p-4">
-        <style>{`
-            .input { @apply w-full py-3 px-4 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary; }
-            .error-text { @apply text-red-500 text-xs px-2 mt-1; }
-      `}</style>
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
         <h2 className="text-xl font-semibold text-center text-brand-text-light mb-1">
           You are donating to
         </h2>
-        <p className="text-2xl font-bold text-center text-brand-primary mb-6 line-clamp-2">
+        <p className="text-2xl font-bold text-center text-brand-primary mb-8 line-clamp-2">
           {campaign ? campaign.title : "..."}
         </p>
 
-        <div className="space-y-4">
-            <div>
-                <label className="text-sm font-medium text-brand-text-light ml-1">Full Name *</label>
-                <input type="text" name="name" placeholder="Enter your name" value={formData.name} onChange={handleChange} className={`input ${errors.name && 'border-red-500'}`} />
-                {errors.name && <p className="error-text">{errors.name}</p>}
-            </div>
-            <div>
-                <label className="text-sm font-medium text-brand-text-light ml-1">Email *</label>
-                <input type="email" name="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} className={`input ${errors.email && 'border-red-500'}`} />
-                {errors.email && <p className="error-text">{errors.email}</p>}
-            </div>
-            <div>
-                <label className="text-sm font-medium text-brand-text-light ml-1">Phone Number *</label>
-                <input type="number" name="phone" placeholder="Enter your phone number" value={formData.phone} onChange={handleChange} className={`input ${errors.phone && 'border-red-500'}`} />
-                {errors.phone && <p className="error-text">{errors.phone}</p>}
-            </div>
-            <div>
-                <label className="text-sm font-medium text-brand-text-light ml-1">PAN Number *</label>
-                <input type="text" name="pan" placeholder="Enter your PAN" value={formData.pan} onChange={handleChange} className={`input uppercase ${errors.pan && 'border-red-500'}`} />
-                {errors.pan && <p className="error-text">{errors.pan}</p>}
-            </div>
-            <div>
-                <label className="text-sm font-medium text-brand-text-light ml-1">Amount (Min ₹50) *</label>
-                <input type="number" name="amount" placeholder="Enter amount" value={formData.amount} onChange={handleChange} className={`input ${errors.amount && 'border-red-500'}`} />
-                {errors.amount && <p className="error-text">{errors.amount}</p>}
-            </div>
+        <div className="space-y-6">
+            <FloatingLabelInput label="Full Name *" name="name" value={formData.name} onChange={handleChange} error={errors.name} />
+            <FloatingLabelInput label="Email *" name="email" type="email" value={formData.email} onChange={handleChange} error={errors.email} />
+            <FloatingLabelInput label="Phone Number *" name="phone" type="number" value={formData.phone} onChange={handleChange} error={errors.phone} />
+            <FloatingLabelInput label="PAN Number *" name="pan" value={formData.pan} onChange={handleChange} error={errors.pan} className="uppercase" />
+            <FloatingLabelInput label="Amount (Min ₹50) *" name="amount" type="number" value={formData.amount} onChange={handleChange} error={errors.amount} />
         </div>
 
-        <button onClick={handlePayment} className="w-full py-3 mt-6 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-lg font-semibold uppercase transition-colors">
+        <button onClick={handlePayment} className="w-full py-3 mt-8 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-lg font-semibold uppercase transition-colors">
           Pay Now
         </button>
       </div>
