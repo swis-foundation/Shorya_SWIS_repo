@@ -16,16 +16,16 @@ const CategoryCard = ({ category, onClick }) => {
             className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 p-6 cursor-pointer flex flex-col justify-between"
         >
             <div>
-                <h3 className="text-lg font-semibold text-lime-600 mb-2">{category.category}</h3>
-                <p className="text-xs text-gray-500 mb-4">{category.campaign_count} active campaigns</p>
+                <h3 className="text-lg font-semibold text-brand-primary mb-2">{category.category}</h3>
+                <p className="text-xs text-brand-text-light mb-4">{category.campaign_count} active campaigns</p>
             </div>
             <div>
                 <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-                    <div className="bg-lime-500 h-2.5 rounded-full" style={progressStyle}></div>
+                    <div className="bg-brand-primary h-2.5 rounded-full" style={progressStyle}></div>
                 </div>
-                <div className="text-sm text-gray-700">
-                    <span className="font-bold">₹{Number(category.total_raised).toLocaleString()}</span> raised of ₹{Number(category.total_goal).toLocaleString()}
-                    <span className="text-lime-600 font-semibold ml-2">({Math.floor(progressPercentage)}%)</span>
+                <div className="text-sm text-brand-text-light">
+                    <span className="font-bold text-brand-text">₹{Number(category.total_raised).toLocaleString()}</span> raised of ₹{Number(category.total_goal).toLocaleString()}
+                    <span className="text-brand-primary font-semibold ml-2">({Math.floor(progressPercentage)}%)</span>
                 </div>
             </div>
         </div>
@@ -50,19 +50,19 @@ const CampaignCard = ({ campaign }) => {
           alt={campaign.title}
           className="w-full h-48 object-cover"
         />
-        <span className="absolute top-2 left-2 bg-lime-600 text-white text-xs px-2 py-1 rounded">
+        <span className="absolute top-2 left-2 bg-brand-primary text-white text-xs px-2 py-1 rounded">
           {campaign.category}
         </span>
       </div>
       <div className="p-4">
-        <h2 className="text-lg font-semibold mb-1 line-clamp-2">{campaign.title}</h2>
+        <h2 className="text-lg font-semibold text-brand-text mb-1 line-clamp-2">{campaign.title}</h2>
         <div className="my-3 h-2 w-full bg-gray-200 rounded-full">
-          <div className="h-full bg-lime-500 rounded-full" style={progressStyle}></div>
+          <div className="h-full bg-brand-primary rounded-full" style={progressStyle}></div>
         </div>
-        <div className="text-sm text-gray-500 mb-1">
+        <div className="text-sm text-brand-text-light">
           <strong>₹{Number(campaign.raised_amount).toLocaleString()}</strong> raised of <strong>₹{Number(campaign.target_amount).toLocaleString()}</strong>
         </div>
-        <div className="text-xs text-gray-400 flex justify-between">
+        <div className="text-xs text-gray-500 flex justify-between mt-2">
           <span>{campaign.supporters} donors</span>
           <span>{campaign.days_left} days left</span>
         </div>
@@ -137,11 +137,11 @@ const CampaignsDetails = () => {
   }, [selectedCategory]);
 
   return (
-    <div className="px-4 sm:px-6 md:px-16 py-8 bg-[#f9f8f3] min-h-screen">
-      <h1 className="text-3xl text-center font-bold text-lime-600 mb-2">
+    <div className="px-4 sm:px-6 md:px-16 py-8 bg-brand-background min-h-screen">
+      <h1 className="text-3xl text-center font-bold text-brand-primary mb-2">
         {selectedCategory ? `Campaigns in ${selectedCategory}` : "Explore Campaigns by Category"}
       </h1>
-      <p className="text-center text-gray-600 mb-8">
+      <p className="text-center text-brand-text-light mb-8">
         {selectedCategory ? "Support a cause that matters to you." : "Select a category to get started."}
       </p>
 
@@ -152,21 +152,21 @@ const CampaignsDetails = () => {
             // Clear category from navigation state to prevent re-triggering
             window.history.replaceState({}, document.title)
           }}
-          className="flex items-center gap-2 mb-8 text-lime-600 hover:underline"
+          className="flex items-center gap-2 mb-8 text-brand-primary hover:text-brand-primary-hover transition-colors"
         >
           <FaArrowLeft /> Back to Categories
         </button>
       )}
 
-      {loading && <p className="text-center">Loading...</p>}
+      {loading && <p className="text-center text-brand-text-light">Loading...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
 
       {!loading && !error && (
         <>
           {/* **MODIFIED:** Logic to handle empty campaigns in a selected category */}
           {selectedCategory && campaigns.length === 0 && (
-            <div className="text-center text-gray-500 bg-white p-8 rounded-lg shadow-md">
-              <h3 className="text-xl font-semibold mb-2">No Active Campaigns</h3>
+            <div className="text-center text-brand-text-light bg-white p-8 rounded-lg shadow-md">
+              <h3 className="text-xl font-semibold text-brand-text mb-2">No Active Campaigns</h3>
               <p>All campaigns under the "{selectedCategory}" category have been completed or there are no campaigns in this category yet. Thank you for your support!</p>
             </div>
           )}
