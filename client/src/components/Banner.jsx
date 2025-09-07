@@ -1,79 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import Slider from "react-slick";
+import React from 'react';
 import { Link } from 'react-router-dom';
 
-const bannerData = [
-  {
-    image: "https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?q=80&w=2070&auto=format&fit=crop",
-    heading: "Raise Funds For",
-    subheading: "Medical Emergencies",
-    tagline: "Your small contribution can make a huge difference in someone's life.",
-    buttonText: "Start a Fundraiser",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?q=80&w=2070&auto=format&fit=crop",
-    heading: "Support a Cause",
-    subheading: "You Believe In",
-    tagline: "Empower communities and support social causes with 0% platform fees.",
-    buttonText: "Explore Campaigns",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?q=80&w=2070&auto=format&fit=crop",
-    heading: "Help The Voiceless",
-    subheading: "Support Animal Welfare",
-    tagline: "Be a voice for those who cannot speak. Support animal shelters and rescue operations.",
-    buttonText: "Donate for Animals",
-  },
-];
-
 const Banner = () => {
-    const [isClient, setIsClient] = useState(false);
-
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
-
-    const settings = {
-        dots: true,
-        infinite: true,
-        autoplay: true,
-        autoplaySpeed: 3000,
-        speed: 800,
-        arrows: false,
-        fade: true,
-        slidesToShow: 1,
-        slidesToScroll: 1,
-    };
-
-    return (
-        <section className="relative w-full h-screen overflow-hidden">
-            {isClient && (
-                <Slider {...settings} className="h-full">
-                    {bannerData.map((item, idx) => (
-                        <div key={idx} className="relative h-screen">
-                            <img
-                                src={item.image}
-                                alt={item.heading}
-                                className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-center text-white p-4">
-                                <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-4 [text-shadow:0_2px_4px_rgb(0_0_0_/_0.5)]">
-                                    {item.heading} <span className="text-brand-secondary">{item.subheading}</span>
-                                </h1>
-                                <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8 [text-shadow:0_1px_3px_rgb(0_0_0_/_0.5)]">{item.tagline}</p>
-                                <Link
-                                    to="/start-campaign"
-                                    className="bg-brand-primary hover:bg-brand-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-300"
-                                >
-                                    {item.buttonText}
-                                </Link>
-                            </div>
-                        </div>
-                    ))}
-                </Slider>
-            )}
-        </section>
-    );
+  return (
+    <div className="relative h-screen bg-cover bg-center flex items-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?q=80&w=2070&auto=format&fit=crop')" }}>
+      <div className="absolute inset-0 bg-black/50"></div>
+      <div className="relative z-10 max-w-4xl mx-auto text-center text-white px-4">
+        <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-4">
+          India's Most Trusted Crowdfunding Platform
+        </h1>
+        <p className="text-lg md:text-xl mb-8">
+          Raise funds for medical emergencies and social causes, with 0% platform fees.
+        </p>
+        <Link
+          to="/start-campaign"
+          className="bg-brand-primary hover:bg-brand-primary-hover text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-300"
+        >
+          Start a Fundraiser for FREE
+        </Link>
+        <div className="mt-12 flex justify-center items-center space-x-8 md:space-x-12">
+          <div className="text-center">
+            <p className="text-3xl md:text-4xl font-bold">8 Lakh+</p>
+            <p className="text-sm">Donations</p>
+          </div>
+          <div className="text-center">
+            <p className="text-3xl md:text-4xl font-bold">2 Lakh+</p>
+            <p className="text-sm">Campaigns</p>
+          </div>
+          <div className="text-center">
+            <p className="text-3xl md:text-4xl font-bold">₹2000 Cr+</p>
+            <p className="text-sm">Raised</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Banner;
