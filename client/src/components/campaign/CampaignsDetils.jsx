@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 const CategoryCard = ({ category, onClick }) => {
-    const progressPercentage = (category.total_raised / category.total_goal) * 100;
+    const progressPercentage = category.total_goal > 0 ? (category.total_raised / category.total_goal) * 100 : 0;
     const progressStyle = {
       width: `${Math.min(progressPercentage, 100)}%`
     };
@@ -24,7 +24,7 @@ const CategoryCard = ({ category, onClick }) => {
                     <div className="bg-brand-primary h-2.5 rounded-full" style={progressStyle}></div>
                 </div>
                 <div className="text-sm text-brand-text-light">
-                    <span className="font-bold text-brand-text">₹{Number(category.total_raised).toLocaleString()}</span> raised of ₹{Number(category.total_goal).toLocaleString()}
+                    <span className="font-bold">₹{Number(category.total_raised).toLocaleString()}</span> raised of ₹{Number(category.total_goal).toLocaleString()}
                     <span className="text-brand-primary font-semibold ml-2">({Math.floor(progressPercentage)}%)</span>
                 </div>
             </div>
@@ -34,7 +34,7 @@ const CategoryCard = ({ category, onClick }) => {
 
 const CampaignCard = ({ campaign }) => {
   const navigate = useNavigate();
-  const progressPercentage = (campaign.raised_amount / campaign.target_amount) * 100;
+  const progressPercentage = Math.round((campaign.raised_amount / campaign.target_amount) * 100);
   const progressStyle = {
     width: `${Math.min(progressPercentage, 100)}%`
   };
@@ -55,17 +55,25 @@ const CampaignCard = ({ campaign }) => {
         </span>
       </div>
       <div className="p-4">
-        <h2 className="text-lg font-semibold text-brand-text mb-1 line-clamp-2">{campaign.title}</h2>
-        <div className="my-3 h-2 w-full bg-gray-200 rounded-full">
-          <div className="h-full bg-brand-primary rounded-full" style={progressStyle}></div>
+        <h2 className="text-lg font-semibold mb-1 line-clamp-2 h-14">{campaign.title}</h2>
+        <div className="flex items-center gap-2 my-3">
+            <div className="h-2 w-full bg-gray-200 rounded-full">
+            <div className="h-full bg-brand-primary rounded-full" style={progressStyle}></div>
+            </div>
+            <span className="text-sm font-semibold text-brand-primary">{progressPercentage}%</span>
         </div>
-        <div className="text-sm text-brand-text-light">
+        <div className="text-sm text-brand-text-light mb-1">
           <strong>₹{Number(campaign.raised_amount).toLocaleString()}</strong> raised of <strong>₹{Number(campaign.target_amount).toLocaleString()}</strong>
         </div>
-        <div className="text-xs text-gray-500 flex justify-between mt-2">
-          <span>{campaign.supporters} donors</span>
-          <span>{campaign.days_left} days left</span>
-        </div>
+        
+        {progressPercentage >= 100 ? (
+            <p className="text-green-600 font-bold text-sm my-2 text-center bg-green-50 py-1 rounded">Goal Achieved!</p>
+        ) : (
+            <div className="text-xs text-gray-400 flex justify-between mt-2">
+                <span>{campaign.supporters} donors</span>
+                <span>{campaign.days_left} days left</span>
+            </div>
+        )}
       </div>
     </div>
   );
@@ -137,7 +145,7 @@ const CampaignsDetails = () => {
   }, [selectedCategory]);
 
   return (
-    <div className="px-4 sm:px-6 md:px-16 py-8 bg-brand-background min-h-screen">
+    <div className="px-4 sm:px-6 md:px-16 py-8 bg-brand-background min-h-screen pt-24">
       <h1 className="text-3xl text-center font-bold text-brand-primary mb-2">
         {selectedCategory ? `Campaigns in ${selectedCategory}` : "Explore Campaigns by Category"}
       </h1>
@@ -152,21 +160,20 @@ const CampaignsDetails = () => {
             // Clear category from navigation state to prevent re-triggering
             window.history.replaceState({}, document.title)
           }}
-          className="flex items-center gap-2 mb-8 text-brand-primary hover:text-brand-primary-hover transition-colors"
+          className="flex items-center gap-2 mb-8 text-brand-primary hover:underline"
         >
           <FaArrowLeft /> Back to Categories
         </button>
       )}
 
-      {loading && <p className="text-center text-brand-text-light">Loading...</p>}
+      {loading && <p className="text-center">Loading...</p>}
       {error && <p className="text-center text-red-500">{error}</p>}
 
       {!loading && !error && (
         <>
-          {/* **MODIFIED:** Logic to handle empty campaigns in a selected category */}
           {selectedCategory && campaigns.length === 0 && (
             <div className="text-center text-brand-text-light bg-white p-8 rounded-lg shadow-md">
-              <h3 className="text-xl font-semibold text-brand-text mb-2">No Active Campaigns</h3>
+              <h3 className="text-xl font-semibold mb-2">No Active Campaigns</h3>
               <p>All campaigns under the "{selectedCategory}" category have been completed or there are no campaigns in this category yet. Thank you for your support!</p>
             </div>
           )}
@@ -184,3 +191,4 @@ const CampaignsDetails = () => {
 };
 
 export default CampaignsDetails;
+
