@@ -9,6 +9,13 @@ if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   console.error("FATAL ERROR: Razorpay API keys are not defined. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment variables.");
   process.exit(1);
 }
+if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
+    console.warn("WARNING: RAZORPAY_WEBHOOK_SECRET is not defined. Webhook verification will be skipped.");
+}
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn("WARNING: Email credentials are not defined in .env. Donation receipts will not be sent.");
+}
+
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -23,10 +30,28 @@ const http = require('http');
 const { Server } = require('socket.io');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer'); // Import nodemailer
 
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
+
+// --- NODEMAILER TRANSPORTER SETUP ---
+let mailTransporter;
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    mailTransporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT, 10),
+        secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+    console.log("Email service configured successfully.");
+} else {
+    console.log("Email service not configured. Receipts will not be sent.");
+}
 
 const UPLOADS_DIR = process.env.NODE_ENV === 'production' 
   ? '/opt/render/project/src/server/uploads' 
@@ -64,11 +89,117 @@ const io = new Server(server, {
 });
 
 app.use(cors());
+
+// --- SEND DONATION RECEIPT FUNCTION ---
+const sendDonationReceipt = async (donationDetails) => {
+    if (!mailTransporter) {
+        console.log('Email service not configured. Skipping receipt.');
+        return;
+    }
+
+    try {
+        const { donor_email, donor_name, amount, campaign_title, razorpay_payment_id } = donationDetails;
+
+        const mailOptions = {
+            from: `"SeedTheChange" <${process.env.EMAIL_USER}>`,
+            to: donor_email,
+            subject: 'Thank You for Your Donation!',
+            html: `
+                <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                    <h2 style="color: #9C3353;">Thank You for Your Generous Donation!</h2>
+                    <p>Dear ${donor_name},</p>
+                    <p>We are incredibly grateful for your contribution to the campaign: <strong>${campaign_title}</strong>.</p>
+                    <p>Your support helps bring us one step closer to our goal and makes a real difference.</p>
+                    <hr>
+                    <h3>Donation Details:</h3>
+                    <ul>
+                        <li><strong>Amount:</strong> ₹${Number(amount).toLocaleString()}</li>
+                        <li><strong>Payment ID:</strong> ${razorpay_payment_id}</li>
+                        <li><strong>Date:</strong> ${new Date().toLocaleDateString()}</li>
+                    </ul>
+                    <hr>
+                    <p>Thank you once again for your generosity.</p>
+                    <p>Warmly,<br>The SeedTheChange Team</p>
+                </div>
+            `,
+        };
+
+        await mailTransporter.sendMail(mailOptions);
+        console.log(`Donation receipt sent to ${donor_email}`);
+    } catch (error) {
+        console.error(`Failed to send donation receipt to ${donationDetails.donor_email}:`, error);
+    }
+};
+
+
+app.post('/api/payments/webhook', bodyParser.raw({ type: 'application/json' }), async (req, res) => {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (secret) {
+        const shasum = crypto.createHmac('sha256', secret);
+        shasum.update(req.body);
+        const digest = shasum.digest('hex');
+        if (digest !== req.headers['x-razorpay-signature']) {
+            console.error('Webhook signature validation failed.');
+            return res.status(400).json({ status: 'Signature validation failed' });
+        }
+    }
+
+    const event = JSON.parse(req.body.toString());
+    if (event.event === 'payment.captured') {
+        const payment = event.payload.payment.entity;
+        const { order_id, amount, email: donor_email } = payment;
+        const { campaignId, donorName, donorPan, isAnonymous } = payment.notes;
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const priorDonation = await client.query('SELECT status FROM donations WHERE razorpay_order_id = $1 FOR UPDATE', [order_id]);
+            const wasAlreadySuccess = priorDonation.rows.length > 0 && priorDonation.rows[0].status === 'success';
+
+            const donationQuery = `
+                INSERT INTO donations (campaign_id, donor_name, donor_pan, amount, razorpay_order_id, razorpay_payment_id, status, is_anonymous, donor_email)
+                VALUES ($1, $2, $3, $4, $5, $6, 'success', $7, $8)
+                ON CONFLICT (razorpay_order_id) DO UPDATE SET
+                razorpay_payment_id = EXCLUDED.razorpay_payment_id, status = 'success', donor_email = EXCLUDED.donor_email;
+            `;
+            await client.query(donationQuery, [campaignId, donorName, donorPan, amount / 100, order_id, payment.id, String(isAnonymous) === 'true', donor_email]);
+            
+            if (!wasAlreadySuccess) {
+                const campaignUpdateQuery = `
+                    UPDATE campaigns SET raised_amount = raised_amount + $1, supporters = supporters + 1 WHERE id = $2;
+                `;
+                await client.query(campaignUpdateQuery, [amount / 100, campaignId]);
+            }
+
+            await client.query('COMMIT');
+            console.log(`Successfully processed webhook for order ${order_id}`);
+
+            const campaignResult = await pool.query('SELECT title FROM campaigns WHERE id = $1', [campaignId]);
+            if (campaignResult.rows.length > 0) {
+                await sendDonationReceipt({
+                    donor_email,
+                    donor_name: donorName,
+                    amount: amount / 100,
+                    campaign_title: campaignResult.rows[0].title,
+                    razorpay_payment_id: payment.id,
+                });
+            }
+
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('Error processing webhook:', err.stack);
+        } finally {
+            client.release();
+        }
+    }
+    res.json({ status: 'ok' });
+});
+
+
 app.use(express.static('public'));
 app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -123,11 +254,14 @@ async function initializeDatabase() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         campaign_id UUID REFERENCES campaigns(id) ON DELETE CASCADE,
         donor_name VARCHAR(255) NOT NULL,
+        donor_pan VARCHAR(10),
         amount DECIMAL(10,2) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         razorpay_order_id VARCHAR(255) UNIQUE,
         razorpay_payment_id VARCHAR(255) UNIQUE,
-        status VARCHAR(50) DEFAULT 'pending'
+        status VARCHAR(50) DEFAULT 'pending',
+        is_anonymous BOOLEAN DEFAULT FALSE,
+        donor_email VARCHAR(255)
       )
     `);
     await client.query(`
@@ -174,8 +308,9 @@ async function initializeDatabase() {
         BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'campaign_update_trigger') THEN
                 CREATE TRIGGER campaign_update_trigger
-                AFTER UPDATE OF raised_amount ON campaigns
+                AFTER UPDATE ON campaigns
                 FOR EACH ROW
+                WHEN (OLD.raised_amount IS DISTINCT FROM NEW.raised_amount)
                 EXECUTE FUNCTION notify_campaign_update();
             END IF;
         END;
@@ -188,7 +323,6 @@ async function initializeDatabase() {
     if (client) client.release();
   }
 }
-
 initializeDatabase();
 
 async function startRealTimeListener() {
@@ -208,7 +342,6 @@ async function startRealTimeListener() {
 startRealTimeListener();
 
 // --- AUTHENTICATION ROUTES ---
-
 app.post('/signup', async (req, res) => {
   let client;
   try {
@@ -266,9 +399,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// --- CROWDFUNDING CAMPAIGN ROUTES ---
-
-// **NEW:** Endpoint for handling image uploads from the rich text editor
+// --- CAMPAIGN ROUTES ---
 app.post('/api/image-upload', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No image file provided.' });
@@ -277,8 +408,7 @@ app.post('/api/image-upload', upload.single('image'), (req, res) => {
   res.json({ success: true, imageUrl: imageUrl });
 });
 
-
-// GET campaigns, with category filtering
+// GET active campaigns
 app.get('/api/campaigns', async (req, res) => {
   const { category } = req.query;
   let query = `
@@ -289,27 +419,42 @@ app.get('/api/campaigns', async (req, res) => {
       supporters, location, created_at,
       ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
     FROM campaigns 
-    WHERE status = 'approved'
+    WHERE status = 'approved' AND end_date >= NOW() 
   `;
   const queryParams = [];
-
   if (category) {
     query += ' AND category = $1';
     queryParams.push(category);
   }
-
   query += ' ORDER BY created_at DESC';
-
   try {
     const result = await pool.query(query, queryParams);
     res.json({ success: true, campaigns: result.rows });
   } catch (err) {
-    console.error('Get campaigns error:', err.stack);
+    console.error('Get active campaigns error:', err.stack);
     res.status(500).json({ success: false, message: 'Server error fetching campaigns.' });
   }
 });
 
-// GET categories with aggregated progress
+// GET completed campaigns
+app.get('/api/campaigns/completed', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT 
+          id, title, description, target_amount, raised_amount, 
+          creator_name, image, category, supporters, location, created_at
+        FROM campaigns 
+        WHERE status = 'approved' AND (end_date < NOW() OR raised_amount >= target_amount)
+        ORDER BY end_date DESC
+      `);
+      res.json({ success: true, campaigns: result.rows });
+    } catch (err) {
+      console.error('Get completed campaigns error:', err.stack);
+      res.status(500).json({ success: false, message: 'Server error fetching completed campaigns.' });
+    }
+  });
+
+
 app.get('/api/categories', async (req, res) => {
     try {
       const result = await pool.query(`
@@ -319,7 +464,7 @@ app.get('/api/categories', async (req, res) => {
           SUM(target_amount) as total_goal,
           SUM(raised_amount) as total_raised
         FROM campaigns
-        WHERE status = 'approved' AND category IS NOT NULL
+        WHERE status = 'approved' AND category IS NOT NULL AND end_date >= NOW()
         GROUP BY category
         ORDER BY category
       `);
@@ -330,14 +475,13 @@ app.get('/api/categories', async (req, res) => {
     }
   });
 
-// GET single campaign
 app.get('/api/campaigns/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(`
       SELECT 
         id, title, description, target_amount, raised_amount, 
-        creator_name, image, category,
+        creator_name, image, category, end_date,
         GREATEST(0, FLOOR(DATE_PART('day', end_date - NOW()))) as days_left,
         supporters, location, created_at,
         ROUND((raised_amount / target_amount * 100)::numeric, 2) as progress_percentage
@@ -354,7 +498,6 @@ app.get('/api/campaigns/:id', async (req, res) => {
   }
 });
 
-// POST new campaign
 app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   try {
     const {
@@ -381,7 +524,7 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id
     `, [
-      creator_name, creator_email, creator_phone, creator_pan,
+      creator_name, creator_email, creator_phone, creator_pan || null,
       title, description, target_amount, category,
       endDate, location, image,
       is_ngo === 'true' ? ngo_name : null,
@@ -401,7 +544,6 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
 });
 
 // --- ADMIN ROUTES ---
-
 app.get('/api/admin/campaigns/pending', async (req, res) => {
   try {
     const result = await pool.query(`
@@ -439,24 +581,29 @@ app.put('/api/admin/campaigns/:id/status', async (req, res) => {
 });
 
 // --- PAYMENT ROUTES ---
-
 app.post('/api/payments/create-order', async (req, res) => {
     try {
-        const { amount, campaignId, donorName } = req.body;
-        if (!amount || !campaignId || !donorName) {
-            return res.status(400).json({ success: false, message: 'Amount, campaignId, and donorName are required' });
+        const { amount, campaignId, donorName, donorPan, donorEmail, isAnonymous } = req.body;
+        if (!amount || !campaignId || !donorName || !donorPan || !donorEmail) {
+            return res.status(400).json({ success: false, message: 'All fields are required' });
         }
         const receiptId = `receipt_${uuidv4().substring(0, 20)}`;
         const options = {
             amount: amount * 100,
             currency: 'INR',
             receipt: receiptId,
-            notes: { campaignId, donorName }
+            notes: { 
+                campaignId, 
+                donorName, 
+                donorPan,
+                isAnonymous: !!isAnonymous // Pass boolean to notes
+            }
         };
         const order = await razorpay.orders.create(options);
+        
         await pool.query(
-            'INSERT INTO donations (campaign_id, donor_name, amount, razorpay_order_id, status) VALUES ($1, $2, $3, $4, $5)',
-            [campaignId, donorName, amount, order.id, 'pending']
+            'INSERT INTO donations (campaign_id, donor_name, donor_pan, amount, razorpay_order_id, status, is_anonymous, donor_email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [campaignId, donorName, donorPan, amount, order.id, 'pending', !!isAnonymous, donorEmail]
         );
         res.json({
             success: true,
@@ -481,18 +628,36 @@ app.post('/api/payments/verify-payment', async (req, res) => {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
+            // Check if donation was already marked successful (e.g., by webhook) to prevent double counting
+            const existingDonation = await client.query('SELECT status FROM donations WHERE razorpay_order_id = $1', [razorpay_order_id]);
+            const isNewSuccess = existingDonation.rows.length > 0 && existingDonation.rows[0].status !== 'success';
+            
             await client.query(
                 `UPDATE donations SET razorpay_payment_id = $1, status = 'success' WHERE razorpay_order_id = $2`,
                 [razorpay_payment_id, razorpay_order_id]
             );
-            const donationResult = await client.query('SELECT campaign_id, amount FROM donations WHERE razorpay_order_id = $1', [razorpay_order_id]);
-            const { campaign_id, amount: donationAmount } = donationResult.rows[0];
-            await client.query(
-                `UPDATE campaigns SET raised_amount = raised_amount + $1, supporters = supporters + 1 WHERE id = $2`,
-                [donationAmount, campaign_id]
-            );
+            
+            if (isNewSuccess) {
+                const donationResult = await client.query('SELECT campaign_id, amount FROM donations WHERE razorpay_order_id = $1', [razorpay_order_id]);
+                const { campaign_id, amount: donationAmount } = donationResult.rows[0];
+                await client.query(
+                    `UPDATE campaigns SET raised_amount = raised_amount + $1, supporters = supporters + 1 WHERE id = $2`,
+                    [donationAmount, campaign_id]
+                );
+            }
+            
             await client.query('COMMIT');
             res.json({ success: true, message: 'Payment verified and campaign updated.' });
+
+            // Send receipt after confirming success to the client
+            const finalDonation = await pool.query('SELECT d.donor_email, d.donor_name, d.amount, c.title as campaign_title FROM donations d JOIN campaigns c ON d.campaign_id = c.id WHERE d.razorpay_order_id = $1', [razorpay_order_id]);
+            if (finalDonation.rows.length > 0) {
+                 await sendDonationReceipt({
+                    ...finalDonation.rows[0],
+                    razorpay_payment_id
+                 });
+            }
+
         } catch (err) {
             await client.query('ROLLBACK');
             console.error('Payment verification database error:', err.stack);
@@ -509,7 +674,7 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(`
-      SELECT donor_name, amount, created_at
+      SELECT donor_name, amount, created_at, is_anonymous
       FROM donations 
       WHERE campaign_id = $1 AND status = 'success'
       ORDER BY created_at DESC
@@ -524,6 +689,7 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
   }
 });
 
+// --- SERVER START ---
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
