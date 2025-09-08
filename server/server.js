@@ -36,17 +36,33 @@ const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
 
-// --- NODEMAILER TRANSPORTER SETUP (UPDATED FOR GMAIL) ---
+// --- NODEMAILER TRANSPORTER SETUP ---
 let mailTransporter;
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     mailTransporter = nodemailer.createTransport({
-        service: 'gmail', // Using the service name for Gmail simplifies setup
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT, 10),
+        secure: process.env.EMAIL_SECURE === 'true', // Use 'true' for port 465, false for others like 587
         auth: {
-            user: process.env.EMAIL_USER, // Your full gmail address
-            pass: process.env.EMAIL_PASS, // The 16-character App Password
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
         },
     });
-    console.log("Email service configured successfully for Gmail.");
+    console.log("Email service configured.");
+
+    // --- Verify mail transporter connection on startup ---
+    mailTransporter.verify(function (error, success) {
+        if (error) {
+            console.error("--- NODEMAILER VERIFICATION FAILED ---");
+            console.error("Could not connect to the email server. Please check your .env credentials (EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS).");
+            console.error("For Gmail, ensure you are using an 'App Password', not your regular password.");
+            console.error("Error Details:", error);
+            console.error("--------------------------------------");
+        } else {
+            console.log("Nodemailer is configured correctly and ready to send emails.");
+        }
+    });
+
 } else {
     console.log("Email service not configured. Receipts will not be sent.");
 }
@@ -145,8 +161,7 @@ app.post('/api/payments/webhook', bodyParser.raw({ type: 'application/json' }), 
     const event = JSON.parse(req.body.toString());
     if (event.event === 'payment.captured') {
         const payment = event.payload.payment.entity;
-        // CORRECTED: Declaring all variables from 'payment' in a single line to avoid redeclaration.
-        const { order_id, amount, email: donor_email } = payment; 
+        const { order_id, amount, email: donor_email } = payment;
         const { campaignId, donorName, donorPan, isAnonymous } = payment.notes;
         const client = await pool.connect();
         try {
@@ -691,3 +706,4 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
+
