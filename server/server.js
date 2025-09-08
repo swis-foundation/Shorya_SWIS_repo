@@ -36,19 +36,17 @@ const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 3000;
 
-// --- NODEMAILER TRANSPORTER SETUP ---
+// --- NODEMAILER TRANSPORTER SETUP (UPDATED FOR GMAIL) ---
 let mailTransporter;
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     mailTransporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST,
-        port: parseInt(process.env.EMAIL_PORT, 10),
-        secure: process.env.EMAIL_SECURE === 'true', // Use 'true' for port 465, false for others like 587
+        service: 'gmail', // Using the service name for Gmail simplifies setup
         auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
+            user: process.env.EMAIL_USER, // Your full gmail address
+            pass: process.env.EMAIL_PASS, // The 16-character App Password
         },
     });
-    console.log("Email service configured successfully.");
+    console.log("Email service configured successfully for Gmail.");
 } else {
     console.log("Email service not configured. Receipts will not be sent.");
 }
@@ -693,4 +691,3 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
 server.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
-
