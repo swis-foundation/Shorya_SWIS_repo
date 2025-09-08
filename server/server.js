@@ -359,7 +359,7 @@ app.get('/api/campaigns', async (req, res) => {
   }
 });
 
-// **NEW:** GET completed campaigns
+// GET completed campaigns
 app.get('/api/campaigns/completed', async (req, res) => {
     try {
       const result = await pool.query(`
@@ -367,7 +367,7 @@ app.get('/api/campaigns/completed', async (req, res) => {
           id, title, description, target_amount, raised_amount, 
           creator_name, image, category, supporters, location, created_at
         FROM campaigns 
-        WHERE status = 'approved' AND end_date < NOW()
+        WHERE status = 'approved' AND (end_date < NOW() OR raised_amount >= target_amount)
         ORDER BY end_date DESC
       `);
       res.json({ success: true, campaigns: result.rows });
