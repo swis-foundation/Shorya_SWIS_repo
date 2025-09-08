@@ -12,10 +12,12 @@ import Layout from "./components/Layout";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import AboutUs from "./components/AboutUs";
 import HowItWorks from "./components/HowItWorks";
+import ScrollToTop from "./components/ScrollToTop"; // Import the new component
 
 const App = () => {
   return (
     <Router>
+      <ScrollToTop /> {/* Add the component here to manage scroll position */}
       <Routes>
         {/* All page routes are now nested inside the Layout route */}
         <Route path="/" element={<Layout />}>
@@ -42,4 +44,3 @@ const App = () => {
 };
 
 export default App;
-
