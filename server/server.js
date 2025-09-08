@@ -89,17 +89,25 @@ app.post('/api/payments/webhook', bodyParser.raw({ type: 'application/json' }), 
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
+            
+            const existingDonation = await client.query('SELECT status FROM donations WHERE razorpay_order_id = $1 FOR UPDATE', [order_id]);
+            const isNewSuccess = !existingDonation.rows.length || existingDonation.rows[0].status !== 'success';
+
             const donationQuery = `
                 INSERT INTO donations (campaign_id, donor_name, donor_pan, amount, razorpay_order_id, razorpay_payment_id, status, is_anonymous)
                 VALUES ($1, $2, $3, $4, $5, $6, 'success', $7)
                 ON CONFLICT (razorpay_order_id) DO UPDATE SET
                 razorpay_payment_id = EXCLUDED.razorpay_payment_id, status = 'success', is_anonymous = EXCLUDED.is_anonymous;
             `;
-            await client.query(donationQuery, [campaignId, donorName, donorPan, amount / 100, order_id, payment.id, isAnonymous === 'true']);
-            const campaignUpdateQuery = `
-                UPDATE campaigns SET raised_amount = raised_amount + $1, supporters = supporters + 1 WHERE id = $2;
-            `;
-            await client.query(campaignUpdateQuery, [amount / 100, campaignId]);
+            await client.query(donationQuery, [campaignId, donorName, donorPan, amount / 100, order_id, payment.id, String(isAnonymous) === 'true']);
+            
+            if (isNewSuccess) {
+                const campaignUpdateQuery = `
+                    UPDATE campaigns SET raised_amount = raised_amount + $1, supporters = supporters + 1 WHERE id = $2;
+                `;
+                await client.query(campaignUpdateQuery, [amount / 100, campaignId]);
+            }
+            
             await client.query('COMMIT');
             console.log(`Successfully processed webhook for order ${order_id}`);
         } catch (err) {
