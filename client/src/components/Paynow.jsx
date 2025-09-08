@@ -11,11 +11,10 @@ const FloatingLabelInput = ({ label, name, value, onChange, error, ...props }) =
   return (
     <div className="relative pt-4">
       <label
-        className={`absolute left-0 transition-all duration-300 pointer-events-none ${
-          isFocused || hasValue
+        className={`absolute left-0 transition-all duration-300 pointer-events-none ${isFocused || hasValue
             ? "top-0 text-xs text-brand-primary"
             : "top-7 text-base text-brand-text-light"
-        }`}
+          }`}
       >
         {label}
       </label>
@@ -25,13 +24,12 @@ const FloatingLabelInput = ({ label, name, value, onChange, error, ...props }) =
         onChange={onChange}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`w-full py-2 bg-transparent border-b-2 transition-colors duration-300 focus:outline-none ${
-          error
+        className={`w-full py-2 bg-transparent border-b-2 transition-colors duration-300 focus:outline-none ${error
             ? "border-red-500"
             : isFocused
-            ? "border-brand-primary"
-            : "border-gray-300"
-        }`}
+              ? "border-brand-primary"
+              : "border-gray-300"
+          }`}
         {...props}
       />
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
@@ -80,14 +78,14 @@ const Paynow = () => {
       [name]: type === 'checkbox' ? checked : (name === "pan" ? value.toUpperCase() : value),
     }));
     if (errors[name]) {
-        setErrors(prev => ({ ...prev, [name]: null }));
+      setErrors(prev => ({ ...prev, [name]: null }));
     }
   };
 
   const validate = () => {
     const newErrors = {};
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-    
+
     if (!formData.name) newErrors.name = "Name is required.";
     if (!formData.phone) newErrors.phone = "Phone number is required.";
     if (!formData.email) newErrors.email = "Email is required.";
@@ -95,9 +93,9 @@ const Paynow = () => {
     else if (parseFloat(formData.amount) < 50) newErrors.amount = "Minimum donation is ₹50.";
 
     if (!formData.pan) {
-        newErrors.pan = "PAN number is required.";
+      newErrors.pan = "PAN number is required.";
     } else if (!panRegex.test(formData.pan)) {
-        newErrors.pan = "Invalid PAN number format.";
+      newErrors.pan = "Invalid PAN number format.";
     }
 
     setErrors(newErrors);
@@ -106,7 +104,7 @@ const Paynow = () => {
 
   const handlePayment = async () => {
     if (!validate()) return;
-    
+
     try {
       const { name, phone, email, amount, pan, isAnonymous } = formData;
       const orderResponse = await fetch(`${backendUrl}/api/payments/create-order`, {
@@ -127,7 +125,7 @@ const Paynow = () => {
         alert(`Error: ${orderData.message}`);
         return;
       }
-      
+
       const options = {
         key: orderData.keyId,
         name: "SeedTheChange",
@@ -181,24 +179,24 @@ const Paynow = () => {
         </p>
 
         <div className="space-y-6">
-            <FloatingLabelInput label="Full Name *" name="name" value={formData.name} onChange={handleChange} error={errors.name} />
-            <FloatingLabelInput label="Email *" name="email" type="email" value={formData.email} onChange={handleChange} error={errors.email} />
-            <FloatingLabelInput label="Phone Number *" name="phone" type="number" value={formData.phone} onChange={handleChange} error={errors.phone} />
-            <FloatingLabelInput label="PAN Number *" name="pan" value={formData.pan} onChange={handleChange} error={errors.pan} className="uppercase" />
-            <FloatingLabelInput label="Amount (Min ₹50) *" name="amount" type="number" value={formData.amount} onChange={handleChange} error={errors.amount} />
-            <div className="flex items-center gap-2 pt-4">
-              <input 
-                type="checkbox" 
-                id="isAnonymous"
-                name="isAnonymous"
-                checked={formData.isAnonymous}
-                onChange={handleChange}
-                className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
-              />
-              <label htmlFor="isAnonymous" className="text-sm text-brand-text-light">
-                Donate anonymously
-              </label>
-            </div>
+          <FloatingLabelInput label="Full Name *" name="name" value={formData.name} onChange={handleChange} error={errors.name} />
+          <FloatingLabelInput label="Email *" name="email" type="email" value={formData.email} onChange={handleChange} error={errors.email} />
+          <FloatingLabelInput label="Phone Number *" name="phone" type="number" value={formData.phone} onChange={handleChange} error={errors.phone} />
+          <FloatingLabelInput label="PAN Number *" name="pan" value={formData.pan} onChange={handleChange} error={errors.pan} className="uppercase" />
+          <FloatingLabelInput label="Amount (Min ₹50) *" name="amount" type="number" value={formData.amount} onChange={handleChange} error={errors.amount} />
+          <div className="flex items-center gap-2 pt-4">
+            <input
+              type="checkbox"
+              id="isAnonymous"
+              name="isAnonymous"
+              checked={formData.isAnonymous}
+              onChange={handleChange}
+              className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
+            />
+            <label htmlFor="isAnonymous" className="text-sm text-brand-text-light">
+              Donate anonymously
+            </label>
+          </div>
         </div>
 
         <button onClick={handlePayment} className="w-full py-3 mt-8 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-lg font-semibold uppercase transition-colors">

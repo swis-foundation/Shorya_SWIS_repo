@@ -103,93 +103,93 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f9f8f3] px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-brand-background px-4 py-8">
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
-        <h2 className="text-2xl font-semibold text-center text-lime-600 mb-2">
+        <h2 className="text-2xl font-semibold text-center text-brand-primary mb-2">
           Join Seed The Change
         </h2>
-        <p className="text-center text-gray-500 mb-6">
+        <p className="text-center text-brand-text-light mb-6">
           Create your account to start making a difference
         </p>
 
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           {/* Full Name */}
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Full Name</label>
+            <label className="block text-brand-text font-medium mb-1">Full Name</label>
             <input
               name="fullName"
               type="text"
               placeholder="Enter your full name"
               value={formData.fullName}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.fullName ? "border-red-500" : "focus:ring-lime-500"}`}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.fullName ? "border-red-500" : "focus:ring-brand-primary"}`}
             />
             {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
           </div>
 
           {/* Mobile Number */}
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Mobile Number</label>
+            <label className="block text-brand-text font-medium mb-1">Mobile Number</label>
             <input
               name="mobile"
               type="tel"
               placeholder="Enter your mobile number"
               value={formData.mobile}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.mobile ? "border-red-500" : "focus:ring-lime-500"}`}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.mobile ? "border-red-500" : "focus:ring-brand-primary"}`}
             />
             {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>}
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Email ID</label>
+            <label className="block text-brand-text font-medium mb-1">Email ID</label>
             <input
               name="email"
               type="email"
               placeholder="Enter your email address"
               value={formData.email}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.email ? "border-red-500" : "focus:ring-lime-500"}`}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.email ? "border-red-500" : "focus:ring-brand-primary"}`}
             />
             {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Password</label>
+            <label className="block text-brand-text font-medium mb-1">Password</label>
             <input
               name="password"
               type="password"
               placeholder="Create a password"
               value={formData.password}
               onChange={handleChange}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.password ? "border-red-500" : "focus:ring-lime-500"}`}
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${errors.password ? "border-red-500" : "focus:ring-brand-primary"}`}
             />
             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
           </div>
           
           {/* Optional Fields */}
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Date of Birth (Optional)</label>
+            <label className="block text-brand-text font-medium mb-1">Date of Birth (Optional)</label>
             <input
               name="dob"
               type="date"
               value={formData.dob}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary"
             />
           </div>
           
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Address (Optional)</label>
+            <label className="block text-brand-text font-medium mb-1">Address (Optional)</label>
             <input
               name="address"
               type="text"
               placeholder="Enter your address"
               value={formData.address}
               onChange={handleChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary"
             />
           </div>
 
@@ -203,17 +203,17 @@ const Signup = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-4 bg-lime-500 hover:bg-lime-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 disabled:bg-gray-400"
+            className="w-full mt-4 bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold py-2 px-4 rounded-lg transition duration-300 disabled:bg-gray-400"
           >
             {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
-        <p className="text-center mt-4 text-sm text-gray-600">
+        <p className="text-center mt-4 text-sm text-brand-text-light">
           Already have an account?{" "}
           <Link
             to="/login"
-            className="text-lime-600 font-medium hover:underline"
+            className="text-brand-primary font-medium hover:underline"
           >
             Log in
           </Link>

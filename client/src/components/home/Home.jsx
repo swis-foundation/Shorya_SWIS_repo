@@ -1,17 +1,22 @@
 import React from "react";
-import Banner from "../Banner.jsx";
-import Help from "../Help.jsx";
-import Campaigns from "../Campaigns.jsx";
+import Banner from "../Banner";
+import WhyTrustUs from "./WhyTrustUs";
+import BeTheChange from "./BeTheChange";
+import ActiveCampaigns from "./ActiveCampaigns";
+import CompletedCampaigns from "./CompletedCampaigns";
 
-function Home() {
+
+const Home = () => {
   return (
-    <>
+    <div className="bg-brand-background">
       <Banner />
-      <Help />
-      <Campaigns />
-    </>
+      <WhyTrustUs />
+      <ActiveCampaigns />
+      <BeTheChange />
+      <CompletedCampaigns />
+    </div>
   );
-}
+};
 
 export default Home;
 

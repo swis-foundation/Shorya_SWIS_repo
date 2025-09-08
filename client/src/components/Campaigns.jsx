@@ -10,9 +10,11 @@ const Campaigns = () => {
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
+        // This endpoint on your server only returns campaigns with status = 'approved'
         const response = await fetch(`${backendUrl}/api/campaigns`);
         const data = await response.json();
         if (data.success) {
+          // So, only approved campaigns will ever be stored in this state
           setCampaigns(data.campaigns);
         } else {
           console.error("Failed to fetch campaigns:", data.message);
@@ -81,17 +83,17 @@ const Campaigns = () => {
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
                   {campaign.title}
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  {campaign.description}
+                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                  {campaign.description.replace(/<[^>]*>/g, '')}
                 </p>
 
                 <div className="text-sm font-medium mb-2">
                   <span className="text-green-700">
-                    ₹{campaign.raised_amount}
+                    ₹{Number(campaign.raised_amount).toLocaleString()}
                   </span>
                   <span className="text-gray-500">
                     {" "}
-                    raised of ₹{campaign.target_amount}
+                    raised of ₹{Number(campaign.target_amount).toLocaleString()}
                   </span>
                 </div>
 
@@ -106,8 +108,8 @@ const Campaigns = () => {
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>❤️ {campaign.supporters}</span>
-                  <span>👥 {campaign.supporters}</span>
+                  <span>❤️ {campaign.supporters} Supporters</span>
+                  <span>👥 {campaign.days_left} Days Left</span>
                 </div>
               </div>
             </div>

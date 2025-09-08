@@ -50,9 +50,9 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">Admin Dashboard</h1>
-      <h2 className="text-2xl font-semibold text-gray-700 mb-4">Pending Campaigns for Approval</h2>
+    <div className="min-h-screen bg-brand-background p-8">
+      <h1 className="text-3xl font-bold text-center text-brand-primary mb-8">Admin Dashboard</h1>
+      <h2 className="text-2xl font-semibold text-brand-text mb-4">Pending Campaigns for Approval</h2>
       
       {loading && <p>Loading...</p>}
       {error && <p className="text-red-500">{error}</p>}
@@ -61,10 +61,10 @@ const AdminDashboard = () => {
         <table className="min-w-full leading-normal">
           <thead>
             <tr>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Campaign Title</th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Creator</th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Goal (₹)</th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-brand-text-light uppercase tracking-wider">Campaign Title</th>
+              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-brand-text-light uppercase tracking-wider">Creator</th>
+              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-brand-text-light uppercase tracking-wider">Goal (₹)</th>
+              <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-50 text-left text-xs font-semibold text-brand-text-light uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -72,19 +72,19 @@ const AdminDashboard = () => {
               pendingCampaigns.map((campaign) => (
                 <tr key={campaign.id}>
                   <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                    <Link to={`/campaigns/${campaign.id}`} className="text-blue-600 hover:underline">{campaign.title}</Link>
+                    <Link to={`/campaigns/${campaign.id}`} className="text-brand-primary hover:underline font-semibold">{campaign.title}</Link>
                   </td>
-                  <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{campaign.creator_name}</td>
-                  <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{Number(campaign.target_amount).toLocaleString()}</td>
+                  <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-brand-text">{campaign.creator_name}</td>
+                  <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm text-brand-text">{Number(campaign.target_amount).toLocaleString()}</td>
                   <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                    <button onClick={() => handleStatusUpdate(campaign.id, 'approved')} className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded mr-2">Approve</button>
-                    <button onClick={() => handleStatusUpdate(campaign.id, 'rejected')} className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded">Reject</button>
+                    <button onClick={() => handleStatusUpdate(campaign.id, 'approved')} className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded mr-2 transition-colors">Approve</button>
+                    <button onClick={() => handleStatusUpdate(campaign.id, 'rejected')} className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded transition-colors">Reject</button>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" className="text-center py-10">No pending campaigns.</td>
+                <td colSpan="4" className="text-center py-10 text-brand-text-light">No pending campaigns.</td>
               </tr>
             )}
           </tbody>

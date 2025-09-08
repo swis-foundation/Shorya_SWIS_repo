@@ -1,83 +1,81 @@
 import React from "react";
-import { FaSearch, FaHeart, FaPlus } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import {
+  FaFacebookF,
+  FaTwitter,
+  FaInstagram,
+  FaLinkedinIn,
+} from "react-icons/fa";
 
-const AboutSection = () => {
+const Footer = () => {
   return (
-    <div className="flex flex-col">
-      {/* About Section */}
-      <section className="bg-white text-center py-12 px-4">
-        <h2 className="text-2xl md:text-3xl font-semibold text-[#8DBD40] mb-4">
-          About Seed The Change
-        </h2>
-        <p className="max-w-3xl mx-auto text-gray-700 mb-12">
-          We believe in the power of collective action to create meaningful
-          change. Our platform connects passionate donors with verified social
-          and humanitarian causes, ensuring every contribution makes a real
-          difference in communities that need it most.
-        </p>
-
-        {/* Features */}
-        <div className="flex flex-col md:flex-row justify-center items-center gap-12">
-          <div className="flex flex-col items-center">
-            <div className="bg-[#EEF5DC] p-4 rounded-full text-[#8DBD40] text-2xl">
-              <FaSearch />
-            </div>
-            <h3 className="mt-3 font-medium text-gray-800">Explore</h3>
-            <p className="text-sm text-gray-500">Discover verified campaigns</p>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <div className="bg-[#EEF5DC] p-4 rounded-full text-[#8DBD40] text-2xl">
-              <FaHeart />
-            </div>
-            <h3 className="mt-3 font-medium text-gray-800">How it Works</h3>
-            <p className="text-sm text-gray-500">Simple, transparent giving</p>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <div className="bg-[#EEF5DC] p-4 rounded-full text-[#8DBD40] text-2xl">
-              <FaPlus />
-            </div>
-            <h3 className="mt-3 font-medium text-gray-800">
-              Start Your Campaign
+    // MODIFIED: Changed background to brand-primary and text to a light gray
+    <footer className="bg-brand-primary text-gray-200 pt-16 pb-8 px-4 sm:px-6 lg:px-20">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          {/* Signup Section */}
+          <div className="md:col-span-1">
+            {/* MODIFIED: Heading color changed to white for contrast */}
+            <h3 className="text-2xl font-semibold mb-4 text-white">
+              Stay Connected
             </h3>
-            <p className="text-sm text-gray-500">
-              Create impact in your community
+            {/* MODIFIED: Text color updated */}
+            <p className="text-gray-300 mb-6">
+              Get the latest updates on new campaigns, success stories, and how
+              you can make a difference. Join our newsletter today!
             </p>
+            <form className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                // MODIFIED: Input field styled for the new dark background
+                className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-secondary"
+              />
+              <button
+                type="submit"
+                // MODIFIED: Button styled to stand out on the new background
+                className="bg-white text-brand-primary font-semibold px-6 py-3 rounded-md hover:bg-gray-200 transition"
+              >
+                Sign Up
+              </button>
+            </form>
+          </div>
+
+          {/* Basic Info & Links Section */}
+          <div className="md:col-span-1">
+            <h3 className="text-2xl font-semibold mb-4 text-white">
+              Get in Touch
+            </h3>
+            <div className="text-gray-300 space-y-3">
+              <p>
+                <strong>Email:</strong> support@seedthechange.com
+              </p>
+              <p>
+                <strong>Phone:</strong> +91-123-456-7890
+              </p>
+              <div className="flex space-x-4 mt-4 text-xl">
+                {/* MODIFIED: Social icon colors updated */}
+                <a href="#" className="hover:text-white transition"><FaFacebookF /></a>
+                <a href="#" className="hover:text-white transition"><FaTwitter /></a>
+                <a href="#" className="hover:text-white transition"><FaInstagram /></a>
+                <a href="#" className="hover:text-white transition"><FaLinkedinIn /></a>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* Join Section */}
-      <section className="bg-[#f4f5ea] text-center py-12 px-4">
-        <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mb-3">
-          Join the Community
-        </h2>
-        <p className="text-sm max-w-xl mx-auto text-gray-600 mb-6">
-          Ready to take your journey to new heights? Connect with like-minded
-          individuals who share your passion for making the world a better
-          place.
-        </p>
-        <button className="bg-[#8DBD40] text-white px-6 py-2 rounded shadow hover:bg-[#7aac39] transition duration-200">
-          Sign Up
-        </button>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-[#8DBD40] text-white text-center py-8 px-4">
-        <div className="flex flex-col items-center">
-          <span className="font-semibold mb-2">🌱 SeedTheChange</span>
-          <p className="text-sm max-w-md mb-2">
-            Connecting compassionate people with causes that matter. <br />
-            Together, we’re building a better world.
-          </p>
-          <p className="text-xs text-white/80 mt-2">
-            © 2024 Seed The Change. All rights reserved.
-          </p>
+        {/* MODIFIED: Bottom border and text colors updated */}
+        <div className="border-t border-white/20 mt-12 pt-8 text-center text-gray-400 text-sm">
+          <p>&copy; {new Date().getFullYear()} SeedTheChange. All Rights Reserved.</p>
+          <div className="mt-4 space-x-6">
+            <Link to="/privacy" className="hover:text-white transition">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-white transition">Terms of Service</Link>
+          </div>
         </div>
-      </footer>
-    </div>
+      </div>
+    </footer>
   );
 };
 
-export default AboutSection;
+export default Footer;
+
