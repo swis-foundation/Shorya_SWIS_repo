@@ -222,7 +222,7 @@ const CampaignPage = () => {
             <p className="text-lg text-brand-text-light">
               <span className="font-bold text-brand-text">{campaign.supporters}</span> Donors
             </p>
-            <Link to={`/campaigns/${campaign.id}/donate`}>
+            <Link to={`/campaigns/${id}/donate`}>
               <button className="w-full bg-brand-primary hover:bg-brand-primary-hover text-white text-xl font-bold py-4 rounded-2xl transition duration-300 shadow-lg">
                 DONATE NOW
               </button>
@@ -282,7 +282,7 @@ const DonorsList = ({ campaignId }) => {
     <ul className="space-y-4 text-brand-text-light text-base">
       {donations.map((d, index) => (
         <li key={index}>
-          🧑‍💼 {d.donor_name} – ₹{Number(d.amount).toLocaleString()}
+          🧑‍💼 {d.is_anonymous ? "Anonymous Donor" : d.donor_name} – ₹{Number(d.amount).toLocaleString()}
         </li>
       ))}
     </ul>
