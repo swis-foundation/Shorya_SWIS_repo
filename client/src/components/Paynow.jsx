@@ -49,6 +49,7 @@ const Paynow = () => {
     email: "",
     amount: "",
     pan: "",
+    isAnonymous: false,
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
@@ -73,10 +74,10 @@ const Paynow = () => {
   }, [id]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "pan" ? value.toUpperCase() : value,
+      [name]: type === 'checkbox' ? checked : (name === "pan" ? value.toUpperCase() : value),
     }));
     if (errors[name]) {
         setErrors(prev => ({ ...prev, [name]: null }));
@@ -92,7 +93,7 @@ const Paynow = () => {
     if (!formData.email) newErrors.email = "Email is required.";
     if (!formData.amount) newErrors.amount = "Amount is required.";
     else if (parseFloat(formData.amount) < 50) newErrors.amount = "Minimum donation is ₹50.";
-    
+
     if (!formData.pan) {
         newErrors.pan = "PAN number is required.";
     } else if (!panRegex.test(formData.pan)) {
@@ -107,7 +108,7 @@ const Paynow = () => {
     if (!validate()) return;
     
     try {
-      const { name, phone, email, amount, pan } = formData;
+      const { name, phone, email, amount, pan, isAnonymous } = formData;
       const orderResponse = await fetch(`${backendUrl}/api/payments/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -116,6 +117,7 @@ const Paynow = () => {
           campaignId: id,
           donorName: name,
           donorPan: pan,
+          isAnonymous: isAnonymous,
         }),
       });
 
@@ -183,6 +185,19 @@ const Paynow = () => {
             <FloatingLabelInput label="Phone Number *" name="phone" type="number" value={formData.phone} onChange={handleChange} error={errors.phone} />
             <FloatingLabelInput label="PAN Number *" name="pan" value={formData.pan} onChange={handleChange} error={errors.pan} className="uppercase" />
             <FloatingLabelInput label="Amount (Min ₹50) *" name="amount" type="number" value={formData.amount} onChange={handleChange} error={errors.amount} />
+            <div className="flex items-center gap-2 pt-4">
+              <input 
+                type="checkbox" 
+                id="isAnonymous"
+                name="isAnonymous"
+                checked={formData.isAnonymous}
+                onChange={handleChange}
+                className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
+              />
+              <label htmlFor="isAnonymous" className="text-sm text-brand-text-light">
+                Donate anonymously
+              </label>
+            </div>
         </div>
 
         <button onClick={handlePayment} className="w-full py-3 mt-8 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-lg font-semibold uppercase transition-colors">
@@ -194,3 +209,4 @@ const Paynow = () => {
 };
 
 export default Paynow;
+
