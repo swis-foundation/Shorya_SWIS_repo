@@ -35,7 +35,7 @@ const CompletedCampaigns = () => {
                 </p>
                 <div className="grid md:grid-cols-3 gap-8">
                     {campaigns.map(campaign => (
-                        <div key={campaign.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                        <Link to={`/campaigns/${campaign.id}`} key={campaign.id} className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
                             <img src={`${backendUrl}/uploads/${campaign.image}`} alt={campaign.title} className="w-full h-48 object-cover" />
                             <div className="p-4 text-left">
                                 <p className="text-sm font-semibold text-brand-primary">{campaign.category}</p>
@@ -44,7 +44,7 @@ const CompletedCampaigns = () => {
                                     Successfully Raised ₹{Number(campaign.raised_amount).toLocaleString()}!
                                 </p>
                             </div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </div>
@@ -53,3 +53,4 @@ const CompletedCampaigns = () => {
 };
 
 export default CompletedCampaigns;
+
