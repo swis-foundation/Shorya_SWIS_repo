@@ -140,7 +140,8 @@ const CampaignPage = () => {
       {/* Main Grid */}
       <div className="py-10 px-4 sm:px-10 lg:px-24 max-w-7xl mx-auto grid lg:grid-cols-3 gap-10">
         {/* Left Side */}
-        <div className="lg-col-span-2 space-y-10">
+        {/* MODIFIED: Corrected a typo from lg-col-span-2 to lg:col-span-2 to fix the layout width. */}
+        <div className="lg:col-span-2 space-y-10">
           {/* Cover Image */}
           <div className="rounded-2xl overflow-hidden shadow-xl">
             <img
@@ -187,7 +188,6 @@ const CampaignPage = () => {
                 />
               </SectionCard>
               <div className="flex items-center gap-2 bg-brand-secondary/20 border border-brand-secondary text-brand-primary font-medium text-base p-4 rounded-xl shadow-md">
-                 {/* MODIFIED: Replaced ✅ emoji with a checkmark icon for a cleaner UI. */}
                  <FaCheckCircle />
                  <span>This campaign is eligible for 80G Tax Exemption.</span>
               </div>
@@ -195,7 +195,6 @@ const CampaignPage = () => {
                 <Detail label="Location" value={campaign.location || 'Not specified'} />
                 <Detail label="End Date" value={new Date(campaign.end_date).toLocaleDateString()} />
                 <p className="flex items-center gap-2 text-red-500 font-semibold mt-2">
-                  {/* MODIFIED: Replaced 🕒 emoji with a clock icon. */}
                   <FaClock />
                   <span>{campaign.days_left} Days Left</span>
                 </p>
@@ -243,9 +242,7 @@ const CampaignPage = () => {
               <p className="text-center text-sm text-green-600 -mt-2">Link copied to clipboard!</p>
             )}
             <div className="text-sm text-brand-text-light space-y-2 pt-2 text-center">
-              {/* MODIFIED: Replaced 📌 emoji with a users icon. */}
               <p className="flex items-center justify-center gap-2"><FaUsers /><span>{campaign.supporters} people have donated</span></p>
-              {/* MODIFIED: Replaced 📚 emoji with a tag icon. */}
               <p className="flex items-center justify-center gap-2"><FaTag /><span>Category: {campaign.category}</span></p>
             </div>
           </div>
@@ -289,7 +286,6 @@ const DonorsList = ({ campaignId }) => {
     <ul className="space-y-4 text-brand-text-light text-base">
       {donations.map((d, index) => (
         <li key={index} className="flex items-center gap-2">
-            {/* MODIFIED: Replaced 🧑‍💼 emoji with a user icon for a more professional look. */}
             <FaUserCircle className="text-brand-primary" />
             <span>
                 {d.is_anonymous ? "Anonymous Donor" : d.donor_name} – ₹{Number(d.amount).toLocaleString()}
