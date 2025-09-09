@@ -12,12 +12,13 @@ import Layout from "./components/Layout";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import AboutUs from "./components/AboutUs";
 import HowItWorks from "./components/HowItWorks";
-import ScrollToTop from "./components/ScrollToTop"; // Import the new component
+import MyTransactions from "./components/MyTransactions";
+import ScrollToTop from "./components/ScrollToTop";
 
 const App = () => {
   return (
     <Router>
-      <ScrollToTop /> {/* Add the component here to manage scroll position */}
+      <ScrollToTop />
       <Routes>
         {/* All page routes are now nested inside the Layout route */}
         <Route path="/" element={<Layout />}>
@@ -34,6 +35,7 @@ const App = () => {
           <Route path="admin" element={<AdminDashboard />} />
           <Route path="aboutUs" element={<AboutUs />} />
           <Route path="how-it-works" element={<HowItWorks />} />
+          <Route path="my-transactions" element={<MyTransactions />} />
           
           {/* Catch-all route for 404 Not Found pages */}
           <Route path="*" element={<div className="text-center p-10">404 Not Found</div>} />
@@ -44,3 +46,4 @@ const App = () => {
 };
 
 export default App;
+
