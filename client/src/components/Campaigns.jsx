@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+// MODIFIED: Import icons to replace emojis.
+import { FaHeart, FaClock } from "react-icons/fa";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
@@ -55,6 +57,9 @@ const Campaigns = () => {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {campaigns.map((campaign) => {
+          const isGoalAchieved = parseFloat(campaign.raised_amount) >= parseFloat(campaign.target_amount);
+          const progressPercentage = campaign.target_amount > 0 ? ((campaign.raised_amount / campaign.target_amount) * 100).toFixed(0) : 0;
+
           return (
             <div
               key={campaign.id}
@@ -71,9 +76,9 @@ const Campaigns = () => {
                 </span>
                 <Link
                   to={`/campaigns/${campaign.id}`}
-                  className="absolute inset-0 flex items-center justify-center bg-lime-600 bg-opacity-0 hover:bg-opacity-80 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  className="absolute inset-0 flex items-center justify-center bg-brand-primary bg-opacity-0 hover:bg-opacity-80 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 >
-                  <button className="bg-lime-600 hover:bg-lime-700 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-lg">
+                  <button className="bg-brand-primary hover:bg-brand-primary-hover text-white px-5 py-2 rounded-full text-sm font-semibold shadow-lg">
                     Donate Now
                   </button>
                 </Link>
@@ -97,7 +102,7 @@ const Campaigns = () => {
                   </span>
                 </div>
 
-                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
                   <div
                     className="bg-green-500 h-2.5 rounded-full"
                     style={progressStyle(
@@ -106,10 +111,15 @@ const Campaigns = () => {
                     )}
                   ></div>
                 </div>
+                 <div className="text-right text-xs font-semibold text-brand-primary mb-2">
+                    {isGoalAchieved ? "Goal Achieved!" : `${progressPercentage}% raised`}
+                </div>
 
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>❤️ {campaign.supporters} Supporters</span>
-                  <span>👥 {campaign.days_left} Days Left</span>
+                  {/* MODIFIED: Replaced ❤️ emoji with FaHeart icon */}
+                  <span className="flex items-center gap-1"><FaHeart /> {campaign.supporters} Supporters</span>
+                  {/* MODIFIED: Replaced 👥 emoji with FaClock icon */}
+                  <span className="flex items-center gap-1"><FaClock /> {campaign.days_left} Days Left</span>
                 </div>
               </div>
             </div>
@@ -129,3 +139,4 @@ const Campaigns = () => {
 };
 
 export default Campaigns;
+
