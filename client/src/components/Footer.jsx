@@ -12,37 +12,9 @@ const Footer = () => {
     // MODIFIED: Changed background to brand-primary and text to a light gray
     <footer className="bg-brand-primary text-gray-200 pt-16 pb-8 px-4 sm:px-6 lg:px-20">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {/* Signup Section */}
-          <div className="md:col-span-1">
-            {/* MODIFIED: Heading color changed to white for contrast */}
-            <h3 className="text-2xl font-semibold mb-4 text-white">
-              Stay Connected
-            </h3>
-            {/* MODIFIED: Text color updated */}
-            <p className="text-gray-300 mb-6">
-              Get the latest updates on new campaigns, success stories, and how
-              you can make a difference. Join our newsletter today!
-            </p>
-            <form className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                // MODIFIED: Input field styled for the new dark background
-                className="w-full px-4 py-3 rounded-md bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-secondary"
-              />
-              <button
-                type="submit"
-                // MODIFIED: Button styled to stand out on the new background
-                className="bg-white text-brand-primary font-semibold px-6 py-3 rounded-md hover:bg-gray-200 transition"
-              >
-                Sign Up
-              </button>
-            </form>
-          </div>
-
+        <div className="flex justify-center">
           {/* Basic Info & Links Section */}
-          <div className="md:col-span-1">
+          <div className="text-center">
             <h3 className="text-2xl font-semibold mb-4 text-white">
               Get in Touch
             </h3>
@@ -53,7 +25,7 @@ const Footer = () => {
               <p>
                 <strong>Phone:</strong> +91-123-456-7890
               </p>
-              <div className="flex space-x-4 mt-4 text-xl">
+              <div className="flex justify-center space-x-4 mt-4 text-xl">
                 {/* MODIFIED: Social icon colors updated */}
                 <a href="#" className="hover:text-white transition"><FaFacebookF /></a>
                 <a href="#" className="hover:text-white transition"><FaTwitter /></a>
@@ -78,4 +50,3 @@ const Footer = () => {
 };
 
 export default Footer;
-
