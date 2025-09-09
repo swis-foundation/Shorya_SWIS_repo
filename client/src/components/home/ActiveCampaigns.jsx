@@ -43,7 +43,15 @@ const ActiveCampaigns = () => {
         <div ref={containerRef} className="flex space-x-6 overflow-x-auto scrollbar-hide">
           {campaigns.map(campaign => (
             <Link to={`/campaigns/${campaign.id}`} key={campaign.id} className="flex-shrink-0 w-80 bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-                <img src={`${backendUrl}/uploads/${campaign.image}`} alt={campaign.title} className="w-full h-48 object-cover" />
+                <img
+                  src={`${backendUrl}/uploads/${campaign.image}`}
+                  alt={campaign.title}
+                  className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null; // prevents looping
+                    e.currentTarget.src = `https://placehold.co/600x400/EEE/31343C?text=${encodeURIComponent(campaign.title)}`;
+                  }}
+                />
                 <div className="p-4">
                     <p className="text-sm font-semibold text-brand-primary">{campaign.category}</p>
                     <h3 className="font-bold text-brand-text mt-1 truncate">{campaign.title}</h3>
