@@ -49,6 +49,10 @@ const CampaignCard = ({ campaign }) => {
           src={`${backendUrl}/uploads/${campaign.image}`}
           alt={campaign.title}
           className="w-full h-48 object-cover"
+          onError={(e) => {
+            e.currentTarget.onerror = null; // prevents looping
+            e.currentTarget.src = `https://placehold.co/600x400/EEE/31343C?text=${encodeURIComponent(campaign.title)}`;
+          }}
         />
         <span className="absolute top-2 left-2 bg-brand-primary text-white text-xs px-2 py-1 rounded">
           {campaign.category}
@@ -191,4 +195,3 @@ const CampaignsDetails = () => {
 };
 
 export default CampaignsDetails;
-
