@@ -22,23 +22,22 @@ function Navbar() {
 
     checkUser();
 
+    // Custom event to listen for storage changes from the Login component
     window.addEventListener('storageChange', checkUser);
-    window.addEventListener('storage', checkUser);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener('storageChange', checkUser);
-      window.removeEventListener('storage', checkUser);
     };
   }, []);
 
   const handleLogout = () => {
     sessionStorage.removeItem("user");
+    // Dispatch custom event so the navbar updates immediately
     window.dispatchEvent(new Event("storageChange"));
     navigate("/");
   };
   
-  // **MODIFIED:** Text color is now always dark for better visibility.
   const navLinkClasses = "text-brand-text hover:text-brand-primary";
 
   const navItems = (
@@ -80,8 +79,8 @@ function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
-                <Link to="/start-campaign" className="bg-brand-primary text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary-hover transition">
-                  Start Campaign
+                <Link to="/my-transactions" className="border border-brand-primary text-brand-primary px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary hover:text-white transition">
+                  My Transactions
                 </Link>
                 <button onClick={handleLogout} className="border border-brand-primary text-brand-primary px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary hover:text-white transition">
                   Logout
@@ -89,18 +88,17 @@ function Navbar() {
               </>
             ) : (
               <>
-                {/* **MODIFIED:** Button styles are now consistent */}
                 <Link to="/login" className="border border-brand-primary text-brand-primary px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary hover:text-white transition">
                   Login
                 </Link>
                  <Link to="/signup" className="border border-brand-primary text-brand-primary px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary hover:text-white transition">
                   Sign Up
                 </Link>
-                <Link to="/start-campaign" className="bg-brand-primary text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary-hover transition">
-                  Start Campaign
-                </Link>
               </>
             )}
+             <Link to="/start-campaign" className="bg-brand-primary text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary-hover transition">
+                  Start Campaign
+                </Link>
           </div>
 
           <div className="md:hidden">
@@ -122,17 +120,12 @@ function Navbar() {
         {menuOpen && (
           <div className="md:hidden mt-2 bg-brand-background rounded-md shadow-lg px-4 py-3 text-sm text-brand-text">
             <ul className="flex flex-col gap-1">
-              <li><Link to="/" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">Home</Link></li>
-              <li><Link to="/aboutUs" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">About Us</Link></li>
-              <li><Link to="/how-it-works" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">How it Works</Link></li>
-              <li><Link to="/campaigns" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">Campaigns</Link></li>
-              {user && user.user_type === 'admin' && (
-                <li><Link to="/admin" className="text-brand-text hover:text-brand-primary transition block py-2 px-2">Admin</Link></li>
-              )}
+              {navItems}
             </ul>
             <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col gap-2">
               {user ? (
                  <>
+                    <Link to="/my-transactions" className="border border-brand-primary text-brand-primary py-2 text-center rounded-md hover:bg-brand-primary hover:text-white transition">My Transactions</Link>
                     <Link to="/start-campaign" className="bg-brand-primary text-white py-2 text-center rounded-md hover:bg-brand-primary-hover transition">Start Campaign</Link>
                     <button onClick={handleLogout} className="border border-brand-primary text-brand-primary py-2 text-center rounded-md hover:bg-brand-primary hover:text-white transition">Logout</button>
                  </>
