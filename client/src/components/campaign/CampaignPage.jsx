@@ -39,6 +39,45 @@ const CommunityFooter = () => (
   </div>
 );
 
+// This new component contains the donation card, making it reusable for different screen sizes.
+const DonationCard = ({ campaign, handleShare, showCopiedMessage }) => (
+    <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl space-y-8 border-2 border-brand-secondary/50 w-full max-w-lg mx-auto">
+        <h3 className="text-lg text-brand-text-light mb-2">
+            <span className="text-3xl font-extrabold text-brand-text">
+                ₹{Number(campaign.raised_amount).toLocaleString()}
+            </span>{" "}
+            raised of ₹{Number(campaign.target_amount).toLocaleString()} Goal
+        </h3>
+        <RealTimeProgressBar
+            campaignId={campaign.id}
+            initialRaised={campaign.raised_amount}
+            initialGoal={campaign.target_amount}
+        />
+        <p className="text-lg text-brand-text-light">
+            <span className="font-bold text-brand-text">{campaign.supporters}</span> Donors
+        </p>
+        <Link to={`/campaigns/${campaign.id}/donate`}>
+            <button className="w-full bg-brand-primary hover:bg-brand-primary-hover text-white text-xl font-bold py-4 rounded-2xl transition duration-300 shadow-lg">
+                DONATE NOW
+            </button>
+        </Link>
+        <button
+            onClick={handleShare}
+            className="w-full mt-2 bg-white border border-brand-primary text-brand-primary hover:bg-brand-secondary/20 font-bold py-3 rounded-2xl transition duration-300 flex items-center justify-center gap-2"
+        >
+            <FaShareAlt />
+            <span>Share</span>
+        </button>
+        {showCopiedMessage && (
+            <p className="text-center text-sm text-green-600 -mt-2">Link copied to clipboard!</p>
+        )}
+        <div className="text-sm text-brand-text-light space-y-2 pt-2 text-center">
+            <p className="flex items-center justify-center gap-2"><FaUsers /><span>{campaign.supporters} people have donated</span></p>
+            <p className="flex items-center justify-center gap-2"><FaTag /><span>Category: {campaign.category}</span></p>
+        </div>
+    </div>
+);
+
 
 const CampaignPage = () => {
   const { id } = useParams();
@@ -140,7 +179,6 @@ const CampaignPage = () => {
       {/* Main Grid */}
       <div className="py-10 px-4 sm:px-10 lg:px-24 max-w-7xl mx-auto grid lg:grid-cols-3 gap-10">
         {/* Left Side */}
-        {/* MODIFIED: Corrected a typo from lg-col-span-2 to lg:col-span-2 to fix the layout width. */}
         <div className="lg:col-span-2 space-y-10">
           {/* Cover Image */}
           <div className="rounded-2xl overflow-hidden shadow-xl">
@@ -160,6 +198,11 @@ const CampaignPage = () => {
               Fundraiser by{" "}
               <span className="font-semibold text-brand-text">{campaign.creator_name}</span>
             </p>
+          </div>
+
+          {/* MODIFIED: Donation card is now shown here on mobile screens for a better layout flow. */}
+          <div className="lg:hidden">
+            <DonationCard campaign={campaign} handleShare={handleShare} showCopiedMessage={showCopiedMessage} />
           </div>
 
           {/* Tabs */}
@@ -209,43 +252,9 @@ const CampaignPage = () => {
           )}
         </div>
 
-        {/* Right Sidebar */}
-        <div className="sticky top-24">
-          <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl space-y-8 border-2 border-brand-secondary/50 w-full max-w-lg mx-auto">
-            <h3 className="text-lg text-brand-text-light mb-2">
-              <span className="text-3xl font-extrabold text-brand-text">
-                ₹{Number(campaign.raised_amount).toLocaleString()}
-              </span>{" "}
-              raised of ₹{Number(campaign.target_amount).toLocaleString()} Goal
-            </h3>
-            <RealTimeProgressBar
-              campaignId={campaign.id}
-              initialRaised={campaign.raised_amount}
-              initialGoal={campaign.target_amount}
-            />
-            <p className="text-lg text-brand-text-light">
-              <span className="font-bold text-brand-text">{campaign.supporters}</span> Donors
-            </p>
-            <Link to={`/campaigns/${campaign.id}/donate`}>
-              <button className="w-full bg-brand-primary hover:bg-brand-primary-hover text-white text-xl font-bold py-4 rounded-2xl transition duration-300 shadow-lg">
-                DONATE NOW
-              </button>
-            </Link>
-            <button
-              onClick={handleShare}
-              className="w-full mt-2 bg-white border border-brand-primary text-brand-primary hover:bg-brand-secondary/20 font-bold py-3 rounded-2xl transition duration-300 flex items-center justify-center gap-2"
-            >
-              <FaShareAlt />
-              <span>Share</span>
-            </button>
-            {showCopiedMessage && (
-              <p className="text-center text-sm text-green-600 -mt-2">Link copied to clipboard!</p>
-            )}
-            <div className="text-sm text-brand-text-light space-y-2 pt-2 text-center">
-              <p className="flex items-center justify-center gap-2"><FaUsers /><span>{campaign.supporters} people have donated</span></p>
-              <p className="flex items-center justify-center gap-2"><FaTag /><span>Category: {campaign.category}</span></p>
-            </div>
-          </div>
+        {/* MODIFIED: Right sidebar is now hidden on mobile and only appears on large screens. */}
+        <div className="hidden lg:block sticky top-24">
+            <DonationCard campaign={campaign} handleShare={handleShare} showCopiedMessage={showCopiedMessage} />
         </div>
       </div>
       <CommunityFooter />
