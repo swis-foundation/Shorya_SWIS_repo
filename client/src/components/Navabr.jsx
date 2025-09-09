@@ -22,20 +22,25 @@ function Navbar() {
 
     checkUser();
 
-    // Custom event to listen for storage changes from the Login component
     window.addEventListener('storageChange', checkUser);
+    window.addEventListener('storage', checkUser);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener('storageChange', checkUser);
+      window.removeEventListener('storage', checkUser);
     };
   }, []);
 
   const handleLogout = () => {
     sessionStorage.removeItem("user");
-    // Dispatch custom event so the navbar updates immediately
     window.dispatchEvent(new Event("storageChange"));
     navigate("/");
+  };
+
+  // MODIFIED: This function will be called by links in the mobile menu to close it on navigation.
+  const closeMobileMenu = () => {
+    setMenuOpen(false);
   };
   
   const navLinkClasses = "text-brand-text hover:text-brand-primary";
@@ -77,6 +82,9 @@ function Navbar() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
+            <Link to="/start-campaign" className="bg-brand-primary text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary-hover transition">
+                Start Campaign
+            </Link>
             {user ? (
               <>
                 <Link to="/my-transactions" className="border border-brand-primary text-brand-primary px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary hover:text-white transition">
@@ -96,9 +104,6 @@ function Navbar() {
                 </Link>
               </>
             )}
-             <Link to="/start-campaign" className="bg-brand-primary text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-brand-primary-hover transition">
-                  Start Campaign
-                </Link>
           </div>
 
           <div className="md:hidden">
@@ -120,20 +125,27 @@ function Navbar() {
         {menuOpen && (
           <div className="md:hidden mt-2 bg-brand-background rounded-md shadow-lg px-4 py-3 text-sm text-brand-text">
             <ul className="flex flex-col gap-1">
-              {navItems}
+              {/* MODIFIED: Added onClick to each link to close the menu */}
+              <li><Link to="/" onClick={closeMobileMenu} className="text-brand-text hover:text-brand-primary transition block py-2 px-2">Home</Link></li>
+              <li><Link to="/aboutUs" onClick={closeMobileMenu} className="text-brand-text hover:text-brand-primary transition block py-2 px-2">About Us</Link></li>
+              <li><Link to="/how-it-works" onClick={closeMobileMenu} className="text-brand-text hover:text-brand-primary transition block py-2 px-2">How it Works</Link></li>
+              <li><Link to="/campaigns" onClick={closeMobileMenu} className="text-brand-text hover:text-brand-primary transition block py-2 px-2">Campaigns</Link></li>
+              {user && user.user_type === 'admin' && (
+                <li><Link to="/admin" onClick={closeMobileMenu} className="text-brand-text hover:text-brand-primary transition block py-2 px-2">Admin</Link></li>
+              )}
             </ul>
             <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col gap-2">
+                <Link to="/start-campaign" onClick={closeMobileMenu} className="bg-brand-primary text-white py-2 text-center rounded-md hover:bg-brand-primary-hover transition">Start Campaign</Link>
               {user ? (
                  <>
-                    <Link to="/my-transactions" className="border border-brand-primary text-brand-primary py-2 text-center rounded-md hover:bg-brand-primary hover:text-white transition">My Transactions</Link>
-                    <Link to="/start-campaign" className="bg-brand-primary text-white py-2 text-center rounded-md hover:bg-brand-primary-hover transition">Start Campaign</Link>
-                    <button onClick={handleLogout} className="border border-brand-primary text-brand-primary py-2 text-center rounded-md hover:bg-brand-primary hover:text-white transition">Logout</button>
+                    <Link to="/my-transactions" onClick={closeMobileMenu} className="border border-brand-primary text-brand-primary py-2 text-center rounded-md hover:bg-brand-primary hover:text-white transition">My Transactions</Link>
+                    {/* MODIFIED: The logout button now also closes the menu */}
+                    <button onClick={() => { handleLogout(); closeMobileMenu(); }} className="border border-brand-primary text-brand-primary py-2 text-center rounded-md hover:bg-brand-primary hover:text-white transition">Logout</button>
                  </>
               ) : (
                  <>
-                    <Link to="/login" className="border border-brand-primary text-brand-primary py-2 text-center rounded-md hover:bg-brand-primary hover:text-white transition">Login</Link>
-                     <Link to="/signup" className="border border-brand-primary text-brand-primary py-2 text-center rounded-md hover:bg-brand-primary hover:text-white transition">Sign Up</Link>
-                    <Link to="/start-campaign" className="bg-brand-primary text-white py-2 text-center rounded-md hover:bg-brand-primary-hover transition">Start Campaign</Link>
+                    <Link to="/login" onClick={closeMobileMenu} className="border border-brand-primary text-brand-primary py-2 text-center rounded-md hover:bg-brand-primary hover:text-white transition">Login</Link>
+                     <Link to="/signup" onClick={closeMobileMenu} className="border border-brand-primary text-brand-primary py-2 text-center rounded-md hover:bg-brand-primary hover:text-white transition">Sign Up</Link>
                  </>
               )}
             </div>
