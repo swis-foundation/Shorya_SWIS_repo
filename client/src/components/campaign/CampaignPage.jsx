@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import RealTimeProgressBar from "./RealTimeProgressBar";
-import DOMPurify from 'dompurify'; // Import DOMPurify for security
-import { FaShareAlt } from "react-icons/fa";
+import DOMPurify from 'dompurify';
+// Icons are imported from react-icons to replace the emojis for a cleaner look.
+import { FaShareAlt, FaCheckCircle, FaClock, FaUsers, FaTag, FaUserCircle } from "react-icons/fa";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
@@ -139,7 +140,7 @@ const CampaignPage = () => {
       {/* Main Grid */}
       <div className="py-10 px-4 sm:px-10 lg:px-24 max-w-7xl mx-auto grid lg:grid-cols-3 gap-10">
         {/* Left Side */}
-        <div className="lg:col-span-2 space-y-10">
+        <div className="lg-col-span-2 space-y-10">
           {/* Cover Image */}
           <div className="rounded-2xl overflow-hidden shadow-xl">
             <img
@@ -185,14 +186,18 @@ const CampaignPage = () => {
                     dangerouslySetInnerHTML={createMarkup(campaign.description)} 
                 />
               </SectionCard>
-              <div className="bg-brand-secondary/20 border border-brand-secondary text-brand-primary font-medium text-base p-4 rounded-xl shadow-md">
-                ✅ This campaign is eligible for 80G Tax Exemption.
+              <div className="flex items-center gap-2 bg-brand-secondary/20 border border-brand-secondary text-brand-primary font-medium text-base p-4 rounded-xl shadow-md">
+                 {/* MODIFIED: Replaced ✅ emoji with a checkmark icon for a cleaner UI. */}
+                 <FaCheckCircle />
+                 <span>This campaign is eligible for 80G Tax Exemption.</span>
               </div>
               <SectionCard title="Campaign Information">
                 <Detail label="Location" value={campaign.location || 'Not specified'} />
                 <Detail label="End Date" value={new Date(campaign.end_date).toLocaleDateString()} />
-                <p className="text-red-500 font-semibold mt-2">
-                  🕒 {campaign.days_left} Days Left
+                <p className="flex items-center gap-2 text-red-500 font-semibold mt-2">
+                  {/* MODIFIED: Replaced 🕒 emoji with a clock icon. */}
+                  <FaClock />
+                  <span>{campaign.days_left} Days Left</span>
                 </p>
               </SectionCard>
             </>
@@ -222,7 +227,7 @@ const CampaignPage = () => {
             <p className="text-lg text-brand-text-light">
               <span className="font-bold text-brand-text">{campaign.supporters}</span> Donors
             </p>
-            <Link to={`/campaigns/${id}/donate`}>
+            <Link to={`/campaigns/${campaign.id}/donate`}>
               <button className="w-full bg-brand-primary hover:bg-brand-primary-hover text-white text-xl font-bold py-4 rounded-2xl transition duration-300 shadow-lg">
                 DONATE NOW
               </button>
@@ -237,9 +242,11 @@ const CampaignPage = () => {
             {showCopiedMessage && (
               <p className="text-center text-sm text-green-600 -mt-2">Link copied to clipboard!</p>
             )}
-            <div className="text-sm text-brand-text-light space-y-1 pt-2 text-center">
-              <p>📌 {campaign.supporters} people have donated</p>
-              <p>📚 Category: {campaign.category}</p>
+            <div className="text-sm text-brand-text-light space-y-2 pt-2 text-center">
+              {/* MODIFIED: Replaced 📌 emoji with a users icon. */}
+              <p className="flex items-center justify-center gap-2"><FaUsers /><span>{campaign.supporters} people have donated</span></p>
+              {/* MODIFIED: Replaced 📚 emoji with a tag icon. */}
+              <p className="flex items-center justify-center gap-2"><FaTag /><span>Category: {campaign.category}</span></p>
             </div>
           </div>
         </div>
@@ -281,13 +288,18 @@ const DonorsList = ({ campaignId }) => {
   return (
     <ul className="space-y-4 text-brand-text-light text-base">
       {donations.map((d, index) => (
-        <li key={index}>
-          🧑‍💼 {d.is_anonymous ? "Anonymous Donor" : d.donor_name} – ₹{Number(d.amount).toLocaleString()}
+        <li key={index} className="flex items-center gap-2">
+            {/* MODIFIED: Replaced 🧑‍💼 emoji with a user icon for a more professional look. */}
+            <FaUserCircle className="text-brand-primary" />
+            <span>
+                {d.is_anonymous ? "Anonymous Donor" : d.donor_name} – ₹{Number(d.amount).toLocaleString()}
+            </span>
         </li>
       ))}
     </ul>
   );
 };
+
 
 export default CampaignPage;
 
