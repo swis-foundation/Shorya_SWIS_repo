@@ -413,6 +413,30 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// --- USER-SPECIFIC ROUTES ---
+app.post('/api/user/donations', async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ success: false, message: 'Email is required.' });
+    }
+    try {
+        const result = await pool.query(`
+            SELECT 
+                d.id, d.amount, d.created_at, d.status, d.campaign_id,
+                c.title as campaign_title
+            FROM donations d
+            JOIN campaigns c ON d.campaign_id = c.id
+            WHERE d.donor_email = $1 AND d.status = 'success'
+            ORDER BY d.created_at DESC
+        `, [email]);
+        res.json({ success: true, donations: result.rows });
+    } catch (err) {
+        console.error('Error fetching user donations:', err.stack);
+        res.status(500).json({ success: false, message: 'Server error fetching donations.' });
+    }
+});
+
+
 // --- CAMPAIGN ROUTES ---
 app.post('/api/image-upload', upload.single('image'), (req, res) => {
   if (!req.file) {
