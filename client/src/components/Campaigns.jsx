@@ -70,6 +70,10 @@ const Campaigns = () => {
                   src={`${backendUrl}/uploads/${campaign.image}`}
                   alt={campaign.title}
                   className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null; // prevents looping
+                    e.currentTarget.src = `https://placehold.co/600x400/EEE/31343C?text=${encodeURIComponent(campaign.title)}`;
+                  }}
                 />
                 <span className="absolute top-2 left-2 bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
                   {campaign.category}
@@ -139,4 +143,3 @@ const Campaigns = () => {
 };
 
 export default Campaigns;
-
