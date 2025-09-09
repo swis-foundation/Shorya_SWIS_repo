@@ -184,8 +184,12 @@ const CampaignPage = () => {
           <div className="rounded-2xl overflow-hidden shadow-xl">
             <img
               src={`${backendUrl}/uploads/${campaign.image}`}
-              alt="Campaign Cover"
+              alt={campaign.title}
               className="w-full h-[300px] md:h-[400px] object-cover"
+              onError={(e) => {
+                e.currentTarget.onerror = null; // prevents looping
+                e.currentTarget.src = `https://placehold.co/800x400/EEE/31343C?text=${encodeURIComponent(campaign.title)}`;
+              }}
             />
           </div>
 
@@ -307,4 +311,3 @@ const DonorsList = ({ campaignId }) => {
 
 
 export default CampaignPage;
-
