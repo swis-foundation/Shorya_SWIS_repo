@@ -256,9 +256,11 @@ const CampaignPage = () => {
           )}
         </div>
 
-        {/* MODIFIED: Right sidebar is now hidden on mobile and only appears on large screens. */}
-        <div className="hidden lg:block sticky top-24">
+        {/* Right sidebar for donation card - sticky on large screens */}
+        <div className="hidden lg:block">
+          <div className="sticky top-24">
             <DonationCard campaign={campaign} handleShare={handleShare} showCopiedMessage={showCopiedMessage} />
+          </div>
         </div>
       </div>
       <CommunityFooter />
@@ -311,3 +313,4 @@ const DonorsList = ({ campaignId }) => {
 
 
 export default CampaignPage;
+
