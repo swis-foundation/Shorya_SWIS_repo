@@ -8,7 +8,7 @@ import { FaShareAlt, FaCheckCircle, FaClock, FaUsers, FaTag, FaUserCircle } from
 const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 const SectionCard = ({ title, children }) => (
-  <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg">
+  <div className="bg-white p-6 md:p-8 shadow-lg">
     <h3 className="text-xl md:text-2xl font-semibold text-brand-primary mb-4">
       {title}
     </h3>
@@ -32,7 +32,7 @@ const CommunityFooter = () => (
       individuals who share your passion for making the world a better place.
     </p>
     <Link to="/signup">
-      <button className="mt-8 bg-brand-primary hover:bg-brand-primary-hover text-white text-lg font-medium py-3 px-8 rounded-xl shadow-md transition-all duration-300">
+      <button className="mt-8 bg-brand-primary hover:bg-brand-primary-hover text-white text-lg font-medium py-3 px-8 shadow-md transition-all duration-300">
         Sign Up →
       </button>
     </Link>
@@ -41,7 +41,7 @@ const CommunityFooter = () => (
 
 // This new component contains the donation card, making it reusable for different screen sizes.
 const DonationCard = ({ campaign, handleShare, showCopiedMessage }) => (
-    <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl space-y-8 border-2 border-brand-secondary/50 w-full max-w-lg mx-auto">
+    <div className="bg-white p-8 md:p-10 shadow-2xl space-y-8 border-2 border-brand-secondary/50 w-full max-w-lg mx-auto">
         <h3 className="text-lg text-brand-text-light mb-2">
             <span className="text-3xl font-extrabold text-brand-text">
                 ₹{Number(campaign.raised_amount).toLocaleString()}
@@ -57,13 +57,13 @@ const DonationCard = ({ campaign, handleShare, showCopiedMessage }) => (
             <span className="font-bold text-brand-text">{campaign.supporters}</span> Donors
         </p>
         <Link to={`/campaigns/${campaign.id}/donate`}>
-            <button className="w-full bg-brand-primary hover:bg-brand-primary-hover text-white text-xl font-bold py-4 rounded-2xl transition duration-300 shadow-lg">
+            <button className="w-full bg-brand-primary hover:bg-brand-primary-hover text-white text-xl font-bold py-4 transition duration-300 shadow-lg">
                 DONATE NOW
             </button>
         </Link>
         <button
             onClick={handleShare}
-            className="w-full mt-2 bg-white border border-brand-primary text-brand-primary hover:bg-brand-secondary/20 font-bold py-3 rounded-2xl transition duration-300 flex items-center justify-center gap-2"
+            className="w-full mt-2 bg-white border border-brand-primary text-brand-primary hover:bg-brand-secondary/20 font-bold py-3 transition duration-300 flex items-center justify-center gap-2"
         >
             <FaShareAlt />
             <span>Share</span>
@@ -165,10 +165,10 @@ const CampaignPage = () => {
   }
 
   return (
-    <div className="bg-brand-background min-h-screen font-sans">
+    <div className="bg-brand-background min-h-screen">
       {/* Header */}
       <div className="bg-white py-12 px-4 sm:px-10 lg:px-24 shadow-sm">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-brand-text leading-snug">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-brand-text leading-snug font-serif">
           {campaign.title}
         </h1>
         <p className="text-lg md:text-xl text-brand-text-light mt-4 max-w-3xl">
@@ -181,7 +181,7 @@ const CampaignPage = () => {
         {/* Left Side */}
         <div className="lg:col-span-2 space-y-10">
           {/* Cover Image */}
-          <div className="rounded-2xl overflow-hidden shadow-xl">
+          <div className="overflow-hidden shadow-xl">
             <img
               src={`${backendUrl}/uploads/${campaign.image}`}
               alt={campaign.title}
@@ -195,7 +195,7 @@ const CampaignPage = () => {
 
           {/* Title */}
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-brand-text">
+            <h2 className="text-2xl md:text-3xl font-bold text-brand-text font-serif">
               {campaign.title}
             </h2>
             <p className="mt-2 text-base md:text-lg text-brand-text-light">
@@ -234,7 +234,7 @@ const CampaignPage = () => {
                     dangerouslySetInnerHTML={createMarkup(campaign.description)} 
                 />
               </SectionCard>
-              <div className="flex items-center gap-2 bg-brand-secondary/20 border border-brand-secondary text-brand-primary font-medium text-base p-4 rounded-xl shadow-md">
+              <div className="flex items-center gap-2 bg-brand-secondary/20 border border-brand-secondary text-brand-primary font-medium text-base p-4 shadow-md">
                  <FaCheckCircle />
                  <span>This campaign is eligible for 80G Tax Exemption.</span>
               </div>
