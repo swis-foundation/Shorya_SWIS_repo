@@ -166,20 +166,24 @@ const CampaignPage = () => {
 
   return (
     <div className="bg-brand-background min-h-screen">
-      {/* Header */}
-      <div className="bg-white py-12 px-4 sm:px-10 lg:px-24 shadow-sm">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-brand-text leading-snug font-serif">
-          {campaign.title}
-        </h1>
-        <p className="text-lg md:text-xl text-brand-text-light mt-4 max-w-3xl">
-          {getShortDescription(campaign.description)}
-        </p>
-      </div>
-
       {/* Main Grid */}
       <div className="py-10 px-4 sm:px-10 lg:px-24 max-w-7xl mx-auto grid lg:grid-cols-3 gap-10">
         {/* Left Side */}
         <div className="lg:col-span-2 space-y-10">
+          {/* Header Content */}
+          <div>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-brand-text leading-snug font-serif">
+              {campaign.title}
+            </h1>
+            <p className="text-lg md:text-xl text-brand-text-light mt-4 max-w-3xl">
+              {getShortDescription(campaign.description)}
+            </p>
+            <p className="mt-4 text-base md:text-lg text-brand-text-light">
+              Fundraiser by{" "}
+              <span className="font-semibold text-brand-text">{campaign.creator_name}</span>
+            </p>
+          </div>
+
           {/* Cover Image */}
           <div className="overflow-hidden shadow-xl">
             <img
@@ -193,18 +197,7 @@ const CampaignPage = () => {
             />
           </div>
 
-          {/* Title */}
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-brand-text font-serif">
-              {campaign.title}
-            </h2>
-            <p className="mt-2 text-base md:text-lg text-brand-text-light">
-              Fundraiser by{" "}
-              <span className="font-semibold text-brand-text">{campaign.creator_name}</span>
-            </p>
-          </div>
-
-          {/* MODIFIED: Donation card is now shown here on mobile screens for a better layout flow. */}
+          {/* Donation card for mobile screens */}
           <div className="lg:hidden">
             <DonationCard campaign={campaign} handleShare={handleShare} showCopiedMessage={showCopiedMessage} />
           </div>
