@@ -111,21 +111,10 @@ const CampaignPage = () => {
     return { __html: DOMPurify.sanitize(htmlContent) };
   };
   
-  // Helper to create a plain text short description from HTML
-  const getShortDescription = (htmlContent) => {
-      if (!htmlContent) return "";
-      // Create a temporary div to parse the HTML and get its text content
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = htmlContent;
-      const text = tempDiv.textContent || tempDiv.innerText || "";
-      // Take the first 150 characters for a concise summary
-      return text.substring(0, 150) + (text.length > 150 ? "..." : "");
-  };
-
   const handleShare = async () => {
     const shareData = {
       title: campaign.title,
-      text: getShortDescription(campaign.description),
+      text: campaign.short_description,
       url: window.location.href,
     };
 
@@ -167,7 +156,7 @@ const CampaignPage = () => {
   return (
     <div className="bg-brand-background min-h-screen">
       {/* Main Grid */}
-      <div className="py-10 px-4 sm:px-10 lg:px-24 max-w-7xl mx-auto grid lg:grid-cols-3 gap-10">
+      <div className="pt-24 pb-10 px-4 sm:px-10 lg:px-24 max-w-7xl mx-auto grid lg:grid-cols-3 gap-10">
         {/* Left Side */}
         <div className="lg:col-span-2 space-y-10">
           {/* Header Content */}
@@ -176,7 +165,7 @@ const CampaignPage = () => {
               {campaign.title}
             </h1>
             <p className="text-lg md:text-xl text-brand-text-light mt-4 max-w-3xl">
-              {getShortDescription(campaign.description)}
+              {campaign.short_description}
             </p>
             <p className="mt-4 text-base md:text-lg text-brand-text-light">
               Fundraiser by{" "}
