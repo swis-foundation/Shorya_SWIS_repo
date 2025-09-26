@@ -244,6 +244,7 @@ async function initializeDatabase() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         title VARCHAR(255) NOT NULL,
         description TEXT NOT NULL,
+        short_description TEXT,
         target_amount DECIMAL(10,2) NOT NULL,
         raised_amount DECIMAL(10,2) DEFAULT 0,
         creator_name VARCHAR(255) NOT NULL,
@@ -451,7 +452,7 @@ app.get('/api/campaigns', async (req, res) => {
   const { category } = req.query;
   let query = `
     SELECT 
-      id, title, description, target_amount, raised_amount, 
+      id, title, description, short_description, target_amount, raised_amount, 
       creator_name, image, category,
       GREATEST(0, FLOOR(DATE_PART('day', end_date - NOW()))) as days_left,
       supporters, location, created_at,
@@ -479,7 +480,7 @@ app.get('/api/campaigns/completed', async (req, res) => {
     try {
       const result = await pool.query(`
         SELECT 
-          id, title, description, target_amount, raised_amount, 
+          id, title, description, short_description, target_amount, raised_amount, 
           creator_name, image, category, supporters, location, created_at
         FROM campaigns 
         WHERE status = 'approved' AND (end_date < NOW() OR raised_amount >= target_amount)
@@ -518,7 +519,7 @@ app.get('/api/campaigns/:id', async (req, res) => {
     const { id } = req.params;
     const result = await pool.query(`
       SELECT 
-        id, title, description, target_amount, raised_amount, 
+        id, title, description, short_description, target_amount, raised_amount, 
         creator_name, image, category, end_date,
         GREATEST(0, FLOOR(DATE_PART('day', end_date - NOW()))) as days_left,
         supporters, location, created_at,
@@ -540,7 +541,7 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
   try {
     const {
       creator_name, creator_email, creator_phone, creator_pan,
-      title, description, target_amount, category,
+      title, description, short_description, target_amount, category,
       days_left, location, is_ngo, ngo_name, ngo_address, ngo_website
     } = req.body;
 
@@ -555,15 +556,15 @@ app.post('/api/campaigns', upload.single('image'), async (req, res) => {
     const result = await pool.query(`
       INSERT INTO campaigns (
         creator_name, creator_email, creator_phone, creator_pan,
-        title, description, target_amount, category,
+        title, description, short_description, target_amount, category,
         end_date, location, image,
         ngo_name, ngo_address, ngo_website
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING id
     `, [
       creator_name, creator_email, creator_phone, creator_pan || null,
-      title, description, target_amount, category,
+      title, description, short_description, target_amount, category,
       endDate, location, image,
       is_ngo === 'true' ? ngo_name : null,
       is_ngo === 'true' ? ngo_address : null,
