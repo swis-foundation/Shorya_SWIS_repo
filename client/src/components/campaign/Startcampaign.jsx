@@ -15,6 +15,7 @@ const StartCampaign = () => {
     creator_phone: "",
     creator_pan: "",
     title: "",
+    short_description: "",
     target_amount: "",
     category: "",
     days_left: "",
@@ -107,6 +108,7 @@ const StartCampaign = () => {
   const validateStep2 = () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = "Campaign title is required.";
+    if (!formData.short_description.trim()) newErrors.short_description = "Short description is required.";
     if (!description || description.replace(/<(.|\n)*?>/g, '').trim().length === 0) newErrors.description = "Description is required.";
     if (!formData.target_amount) newErrors.target_amount = "Goal amount is required.";
     if (!formData.category) newErrors.category = "Category is required.";
@@ -198,8 +200,13 @@ const StartCampaign = () => {
         <input type="text" name="title" value={formData.title} onChange={handleChange} placeholder="e.g., Help Rebuild the Local Library" className={`w-full input ${errors.title && 'border-red-500'}`} />
         {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
       </div>
+       <div>
+        <label className="block text-brand-text font-medium mb-1">Short Description</label>
+        <textarea name="short_description" value={formData.short_description} onChange={handleChange} placeholder="A brief summary of your campaign (max 150 characters)" maxLength="150" className={`w-full input h-24 ${errors.short_description && 'border-red-500'}`} />
+        {errors.short_description && <p className="text-red-500 text-sm mt-1">{errors.short_description}</p>}
+      </div>
       <div>
-        <label className="block text-brand-text font-medium mb-1">Description</label>
+        <label className="block text-brand-text font-medium mb-1">Full Story</label>
         <ReactQuill 
             ref={quillRef}
             theme="snow" 
@@ -294,3 +301,4 @@ const StartCampaign = () => {
 };
 
 export default StartCampaign;
+
